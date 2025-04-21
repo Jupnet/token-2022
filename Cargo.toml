@@ -52,3 +52,42 @@ config = "scripts/spellcheck.toml"
 pre-release-commit-message = "Publish {{crate_name}} v{{version}}"
 tag-message = "Publish {{crate_name}} v{{version}}"
 consolidate-commits = false
+
+[patch.crates-io]
+spl-token = { path = "../token/program" }
+
+# solana-sdk
+solana-account-info =  { path = "../solana-sdk/account-info" }
+solana-clock =  { path = "../solana-sdk/clock" }
+solana-cpi =  { path = "../solana-sdk/cpi" }
+solana-decode-error =  { path = "../solana-sdk/decode-error" }
+solana-instruction =  { path = "../solana-sdk/instruction" }
+solana-msg =  { path = "../solana-sdk/msg" }
+solana-native-token =  { path = "../solana-sdk/native-token" }
+solana-program-entrypoint =  { path = "../solana-sdk/program-entrypoint" }
+solana-program-error =  { path = "../solana-sdk/program-error" }
+solana-program-memory =  { path = "../solana-sdk/program-memory" }
+solana-program-option =  { path = "../solana-sdk/program-option" }
+solana-program-pack =  { path = "../solana-sdk/program-pack" }
+solana-pubkey =  { path = "../solana-sdk/pubkey" }
+solana-rent =  { path = "../solana-sdk/rent"    }
+solana-sdk-ids =  { path = "../solana-sdk/sdk-ids" }
+solana-sysvar =  { path = "../solana-sdk/sysvar" }
+solana-feature-set =  { path = "../solana-sdk/feature-set" }
+solana-logger =  { path = "../solana-sdk/logger" }
+
+# solana
+solana-account-decoder =  { path = "../account-decoder" }
+solana-client =  { path = "../client" }
+solana-cli-output =  { path = "../cli-output" }
+solana-test-validator =  { path = "../test-validator" }
+solana-transaction-status =  { path = "../transaction-status" }
+solana-program-test =  { path = "../program-test" }
+solana-zk-sdk =  { path = "../zk-sdk" }
+solana-inline-spl =  { path = "../inline-spl" }
+solana-clap-v3-utils =  { path = "../clap-v3-utils" }
+solana-cli-config =  { path = "../cli-config" }
+solana-remote-wallet =  { path = "../remote-wallet" }
+solana-banks-interface =  { path = "../banks-interface" }
+solana-rpc-client =  { path = "../rpc-client" }
+solana-rpc-client-api =  { path = "../rpc-client-api" }
