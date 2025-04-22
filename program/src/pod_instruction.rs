@@ -10,7 +10,7 @@ use {
     },
     spl_pod::{
         bytemuck::{pod_from_bytes, pod_get_packed_len},
-        primitives::PodU64,
+        primitives::PodU256,
     },
 };
 
@@ -35,13 +35,13 @@ pub(crate) struct InitializeMultisigData {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable)]
 pub(crate) struct AmountData {
     /// The amount of tokens to transfer.
-    pub(crate) amount: PodU64,
+    pub(crate) amount: PodU256,
 }
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Pod, Zeroable)]
 pub(crate) struct AmountCheckedData {
     /// The amount of tokens to transfer.
-    pub(crate) amount: PodU64,
+    pub(crate) amount: PodU256,
     /// Decimals of the mint
     pub(crate) decimals: u8,
 }

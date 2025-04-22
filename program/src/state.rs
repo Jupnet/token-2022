@@ -7,6 +7,7 @@ use {
         instruction::MAX_SIGNERS,
     },
     arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs},
+    ethnum::U256,
     num_enum::{IntoPrimitive, TryFromPrimitive},
     solana_program::{
         program_error::ProgramError,
@@ -34,7 +35,7 @@ pub struct Mint {
     /// minted.
     pub mint_authority: COption<Pubkey>,
     /// Total supply of tokens.
-    pub supply: u64,
+    pub supply: U256,
     /// Number of base 10 digits to the right of the decimal place.
     pub decimals: u8,
     /// Is `true` if this structure has been initialized
@@ -49,13 +50,13 @@ impl IsInitialized for Mint {
     }
 }
 impl Pack for Mint {
-    const LEN: usize = 82;
+    const LEN: usize = 106;
     fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
-        let src = array_ref![src, 0, 82];
+        let src = array_ref![src, 0, 106];
         let (mint_authority, supply, decimals, is_initialized, freeze_authority) =
-            array_refs![src, 36, 8, 1, 1, 36];
+            array_refs![src, 36, 32, 1, 1, 36];
         let mint_authority = unpack_coption_key(mint_authority)?;
-        let supply = u64::from_le_bytes(*supply);
+        let supply = U256::from_le_bytes(*supply);
         let decimals = decimals[0];
         let is_initialized = match is_initialized {
             [0] => false,
@@ -72,14 +73,14 @@ impl Pack for Mint {
         })
     }
     fn pack_into_slice(&self, dst: &mut [u8]) {
-        let dst = array_mut_ref![dst, 0, 82];
+        let dst = array_mut_ref![dst, 0, 106];
         let (
             mint_authority_dst,
             supply_dst,
             decimals_dst,
             is_initialized_dst,
             freeze_authority_dst,
-        ) = mut_array_refs![dst, 36, 8, 1, 1, 36];
+        ) = mut_array_refs![dst, 36, 32, 1, 1, 36];
         let &Mint {
             ref mint_authority,
             supply,
@@ -107,7 +108,7 @@ pub struct Account {
     /// The owner of this account.
     pub owner: Pubkey,
     /// The amount of tokens this account holds.
-    pub amount: u64,
+    pub amount: U256,
     /// If `delegate` is `Some` then `delegated_amount` represents
     /// the amount authorized by the delegate
     pub delegate: COption<Pubkey>,
@@ -119,7 +120,7 @@ pub struct Account {
     /// drop below this threshold.
     pub is_native: COption<u64>,
     /// The amount delegated
-    pub delegated_amount: u64,
+    pub delegated_amount: U256,
     /// Optional authority to close the account.
     pub close_authority: COption<Pubkey>,
 }
@@ -146,25 +147,25 @@ impl IsInitialized for Account {
     }
 }
 impl Pack for Account {
-    const LEN: usize = 165;
+    const LEN: usize = 213;
     fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
-        let src = array_ref![src, 0, 165];
+        let src = array_ref![src, 0, 213];
         let (mint, owner, amount, delegate, state, is_native, delegated_amount, close_authority) =
-            array_refs![src, 32, 32, 8, 36, 1, 12, 8, 36];
+            array_refs![src, 32, 32, 32, 36, 1, 12, 32, 36];
         Ok(Account {
             mint: Pubkey::new_from_array(*mint),
             owner: Pubkey::new_from_array(*owner),
-            amount: u64::from_le_bytes(*amount),
+            amount: U256::from_le_bytes(*amount),
             delegate: unpack_coption_key(delegate)?,
             state: AccountState::try_from_primitive(state[0])
                 .or(Err(ProgramError::InvalidAccountData))?,
             is_native: unpack_coption_u64(is_native)?,
-            delegated_amount: u64::from_le_bytes(*delegated_amount),
+            delegated_amount: U256::from_le_bytes(*delegated_amount),
             close_authority: unpack_coption_key(close_authority)?,
         })
     }
     fn pack_into_slice(&self, dst: &mut [u8]) {
-        let dst = array_mut_ref![dst, 0, 165];
+        let dst = array_mut_ref![dst, 0, 213];
         let (
             mint_dst,
             owner_dst,
@@ -174,7 +175,7 @@ impl Pack for Account {
             is_native_dst,
             delegated_amount_dst,
             close_authority_dst,
-        ) = mut_array_refs![dst, 32, 32, 8, 36, 1, 12, 8, 36];
+        ) = mut_array_refs![dst, 32, 32, 32, 36, 1, 12, 32, 36];
         let &Account {
             ref mint,
             ref owner,
@@ -333,34 +334,52 @@ pub(crate) mod test {
 
     pub const TEST_MINT: Mint = Mint {
         mint_authority: COption::Some(Pubkey::new_from_array([1; 32])),
-        supply: 42,
+        supply: U256::new(42),
         decimals: 7,
         is_initialized: true,
         freeze_authority: COption::Some(Pubkey::new_from_array([2; 32])),
     };
     pub const TEST_MINT_SLICE: &[u8] = &[
-        1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 42, 0, 0, 0, 0, 0, 0, 0, 7, 1, 1, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        1, 0, 0, 0, // Mint authority COption
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, // Mint authority value
+        42, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, // Supply
+        7, // Decimals
+        1, // is_initialized
+        1, 0, 0, 0, // Freeze authority COption
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, // Freeze authority value
     ];
 
     pub const TEST_ACCOUNT: Account = Account {
         mint: Pubkey::new_from_array([1; 32]),
         owner: Pubkey::new_from_array([2; 32]),
-        amount: 3,
+        amount: U256::new(3),
         delegate: COption::Some(Pubkey::new_from_array([4; 32])),
         state: AccountState::Frozen,
         is_native: COption::Some(5),
-        delegated_amount: 6,
+        delegated_amount: U256::new(6),
         close_authority: COption::Some(Pubkey::new_from_array([7; 32])),
     };
     pub const TEST_ACCOUNT_SLICE: &[u8] = &[
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
-        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 2, 1, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0,
-        0, 6, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        1, 1, // Mint
+        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+        2, 2, // Owner
+        3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, // Amount
+        1, 0, 0, 0, // is_native COption
+        4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+        4, 4, // is_native value
+        2, // State
+        1, 0, 0, 0, // Delegate COption
+        5, 0, 0, 0, 0, 0, 0, 0, // Delegate value
+        6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, // Delegated amount
+        1, 0, 0, 0, // Close authority COption
+        7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+        7, 7, // Close authority value
     ];
     pub const TEST_MULTISIG: Multisig = Multisig {
         m: 1,

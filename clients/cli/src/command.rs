@@ -9,6 +9,7 @@ use {
         sort::{sort_and_parse_token_accounts, AccountFilter},
     },
     clap::{value_t, value_t_or_exit, ArgMatches},
+    ethnum::U256,
     futures::try_join,
     serde::Serialize,
     solana_account_decoder::{
@@ -84,7 +85,12 @@ fn print_error_and_exit<T, E: Display>(e: E) -> T {
     exit(1)
 }
 
-fn amount_to_raw_amount(amount: Amount, decimals: u8, all_amount: Option<u64>, name: &str) -> u64 {
+fn amount_to_raw_amount(
+    amount: Amount,
+    decimals: u8,
+    all_amount: Option<U256>,
+    name: &str,
+) -> U256 {
     match amount {
         Amount::Raw(ui_amount) => ui_amount,
         Amount::Decimal(ui_amount) => spl_token::ui_amount_to_amount(ui_amount, decimals),
@@ -252,7 +258,7 @@ async fn command_create_token(
     member_address: Option<Pubkey>,
     rate_bps: Option<i16>,
     default_account_state: Option<AccountState>,
-    transfer_fee: Option<(u16, u64)>,
+    transfer_fee: Option<(u16, U256)>,
     confidential_transfer_auto_approve: Option<bool>,
     transfer_hook_program_id: Option<Pubkey>,
     enable_metadata: bool,
@@ -1618,7 +1624,7 @@ async fn command_transfer(
                 range_proof_data,
             } = transfer_account_info
                 .generate_split_transfer_proof_data(
-                    transfer_balance,
+                    transfer_balance.as_u64(),
                     &args.sender_elgamal_keypair,
                     &args.sender_aes_key,
                     &recipient_elgamal_pubkey,
@@ -1683,7 +1689,7 @@ async fn command_transfer(
                     Some(&equality_proof_context_proof_account),
                     Some(&ciphertext_validity_proof_account_with_ciphertext),
                     Some(&range_proof_context_proof_account),
-                    transfer_balance,
+                    transfer_balance.as_u64(),
                     Some(transfer_account_info),
                     &args.sender_elgamal_keypair,
                     &args.sender_aes_key,
@@ -1937,7 +1943,7 @@ async fn command_wrap(
     bulk_signers: BulkSigners,
 ) -> CommandResult {
     let lamports = match amount {
-        Amount::Raw(amount) => amount,
+        Amount::Raw(amount) => amount.as_u64(),
         Amount::Decimal(amount) => sol_to_lamports(amount),
         Amount::All => {
             return Err("ALL keyword not supported for SOL amount".into());
@@ -2461,7 +2467,7 @@ async fn command_gc(
                 let token_amount = ui_token_account
                     .token_amount
                     .amount
-                    .parse::<u64>()
+                    .parse::<U256>()
                     .unwrap_or_else(|err| panic!("Invalid token amount: {}", err));
 
                 let close_authority = ui_token_account.close_authority.map_or(owner, |s| {
@@ -2482,7 +2488,7 @@ async fn command_gc(
         println_display(config, format!("Processing token: {}", token_pubkey));
 
         let token = token_client_from_config(config, &token_pubkey, Some(decimals))?;
-        let total_balance: u64 = accounts.values().map(|account| account.0).sum();
+        let total_balance: U256 = accounts.values().map(|account| account.0).sum();
 
         let associated_token_account = token.get_associated_token_address(&owner);
         if !accounts.contains_key(&associated_token_account) && total_balance > 0 {
@@ -3406,7 +3412,11 @@ async fn command_deposit_withdraw_confidential_tokens(
             let WithdrawProofData {
                 equality_proof_data,
                 range_proof_data,
-            } = withdraw_account_info.generate_proof_data(amount, elgamal_keypair, aes_key)?;
+            } = withdraw_account_info.generate_proof_data(
+                amount.as_u64(),
+                elgamal_keypair,
+                aes_key,
+            )?;
 
             // set up context state accounts
             let context_state_authority_pubkey = context_state_authority.pubkey();
@@ -3441,7 +3451,7 @@ async fn command_deposit_withdraw_confidential_tokens(
                     Some(&ProofAccount::ContextAccount(
                         range_proof_context_state_pubkey,
                     )),
-                    amount,
+                    amount.as_u64(),
                     decimals,
                     Some(withdraw_account_info),
                     elgamal_keypair,
@@ -3579,7 +3589,7 @@ pub async fn process_command<'a>(
                         .unwrap_or_else(print_error_and_exit),
                     v.next()
                         .unwrap()
-                        .parse::<u64>()
+                        .parse::<U256>()
                         .unwrap_or_else(print_error_and_exit),
                 )
             });

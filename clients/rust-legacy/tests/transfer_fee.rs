@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::{AsU256, U256},
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -23,7 +24,7 @@ use {
     std::convert::TryInto,
 };
 
-const TEST_MAXIMUM_FEE: u64 = 10_000_000;
+const TEST_MAXIMUM_FEE: U256 = U256::new(10_000_000);
 const TEST_FEE_BASIS_POINTS: u16 = 250;
 
 fn test_transfer_fee() -> TransferFee {
@@ -85,7 +86,7 @@ struct TokenWithAccounts {
     bob_account: Pubkey,
 }
 
-async fn create_mint_with_accounts(alice_amount: u64) -> TokenWithAccounts {
+async fn create_mint_with_accounts(alice_amount: U256) -> TokenWithAccounts {
     let TransferFeeConfigWithKeypairs {
         transfer_fee_config_authority,
         withdraw_withheld_authority,
@@ -98,7 +99,7 @@ async fn create_mint_with_accounts(alice_amount: u64) -> TokenWithAccounts {
             .newer_transfer_fee
             .transfer_fee_basis_points,
     );
-    let maximum_fee = u64::from(transfer_fee_config.newer_transfer_fee.maximum_fee);
+    let maximum_fee = U256::from(transfer_fee_config.newer_transfer_fee.maximum_fee);
     context
         .init_token_with_freezing_mint(vec![ExtensionInitializationParams::TransferFeeConfig {
             transfer_fee_config_authority: transfer_fee_config_authority.pubkey().into(),
@@ -296,7 +297,7 @@ async fn set_fee() {
 
     // set to something new, old fee not touched
     let new_transfer_fee_basis_points = MAX_FEE_BASIS_POINTS;
-    let new_maximum_fee = u64::MAX;
+    let new_maximum_fee = U256::MAX;
     token
         .set_transfer_fee(
             &transfer_fee_config_authority.pubkey(),
@@ -320,7 +321,7 @@ async fn set_fee() {
 
     // set again, old fee still not touched
     let new_transfer_fee_basis_points = 0;
-    let new_maximum_fee = 0;
+    let new_maximum_fee = U256::ZERO;
     token
         .set_transfer_fee(
             &transfer_fee_config_authority.pubkey(),
@@ -344,7 +345,7 @@ async fn set_fee() {
 
     // warp forward one epoch, old fee still not touched when set
     let new_transfer_fee_basis_points = 10;
-    let new_maximum_fee = 10;
+    let new_maximum_fee = U256::new(10);
     context
         .context
         .lock()
@@ -381,7 +382,7 @@ async fn set_fee() {
         .warp_to_slot(first_normal_slot + 3 * slots_per_epoch)
         .unwrap();
     let new_transfer_fee_basis_points = MAX_FEE_BASIS_POINTS;
-    let new_maximum_fee = u64::MAX;
+    let new_maximum_fee = U256::MAX;
     token
         .set_transfer_fee(
             &transfer_fee_config_authority.pubkey(),
@@ -456,7 +457,7 @@ async fn fail_unsupported_mint() {
         ..
     } = context.token_context.unwrap();
     let transfer_fee_basis_points = u16::MAX;
-    let maximum_fee = u64::MAX;
+    let maximum_fee = U256::MAX;
     let error = token
         .set_transfer_fee(
             &mint_authority.pubkey(),
@@ -567,7 +568,7 @@ async fn set_transfer_fee_config_authority() {
 
     // assert new_authority can update transfer fee config, and old cannot
     let transfer_fee_basis_points = MAX_FEE_BASIS_POINTS;
-    let maximum_fee = u64::MAX;
+    let maximum_fee = U256::MAX;
     let err = token
         .set_transfer_fee(
             &transfer_fee_config_authority.pubkey(),
@@ -640,7 +641,7 @@ async fn set_transfer_fee_config_authority() {
         .set_transfer_fee(
             &transfer_fee_config_authority.pubkey(),
             0,
-            0,
+            U256::ZERO,
             &[&transfer_fee_config_authority],
         )
         .await
@@ -896,8 +897,8 @@ async fn transfer_checked() {
         )))
     );
 
-    let mut withheld_amount = 0;
-    let mut transferred_amount = 0;
+    let mut withheld_amount = U256::ZERO;
+    let mut transferred_amount = U256::ZERO;
 
     // success, clean calculation for transfer fee
     let fee = transfer_fee_config
@@ -954,12 +955,13 @@ async fn transfer_checked() {
     assert_eq!(extension.withheld_amount, withheld_amount.into());
 
     // success, maximum fee kicks in
-    let transfer_amount = 1 + maximum_fee * (MAX_FEE_BASIS_POINTS as u64)
+    let transfer_amount = 1 + maximum_fee * (MAX_FEE_BASIS_POINTS.as_u256())
         / (u16::from(
             transfer_fee_config
                 .newer_transfer_fee
                 .transfer_fee_basis_points,
-        ) as u64);
+        )
+        .as_u256());
     let fee = transfer_fee_config
         .calculate_epoch_fee(0, transfer_amount)
         .unwrap();
@@ -998,7 +1000,7 @@ async fn transfer_checked() {
         .await
         .unwrap();
     transferred_amount += alice_amount - 1 - maximum_fee;
-    alice_amount = 1;
+    alice_amount = U256::ONE;
     withheld_amount += maximum_fee;
     let alice_state = token.get_account_info(&alice_account).await.unwrap();
     assert_eq!(alice_state.base.amount, alice_amount);
@@ -1011,7 +1013,13 @@ async fn transfer_checked() {
 
     // final transfer, only move tokens to withheld amount, nothing received
     token
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 1, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::ONE,
+            &[&alice],
+        )
         .await
         .unwrap();
     withheld_amount += 1;
@@ -1178,7 +1186,7 @@ async fn create_and_transfer_to_account(
     source: &Pubkey,
     authority: &Keypair,
     owner: &Pubkey,
-    amount: u64,
+    amount: U256,
 ) -> Pubkey {
     let account = Keypair::new();
     token
@@ -1656,7 +1664,7 @@ async fn withdraw_withheld_tokens_from_accounts() {
 
 #[tokio::test]
 async fn fail_close_with_withheld() {
-    let amount = TEST_MAXIMUM_FEE;
+    let amount = U256::from(TEST_MAXIMUM_FEE);
     let alice_amount = amount * 100;
     let TokenWithAccounts {
         token,

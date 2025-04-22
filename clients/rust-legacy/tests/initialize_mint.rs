@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -450,7 +451,7 @@ async fn fail_fee_init_after_mint_init() {
             Some(&Pubkey::new_unique()),
             Some(&Pubkey::new_unique()),
             10,
-            100,
+            U256::new(100),
         )
         .unwrap(),
     ];
@@ -502,7 +503,7 @@ async fn fail_invalid_extensions_combination() {
             Some(&Pubkey::new_unique()),
             Some(&Pubkey::new_unique()),
             10,
-            100,
+            U256::new(100),
         )
         .unwrap();
 

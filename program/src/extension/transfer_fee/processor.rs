@@ -12,8 +12,7 @@ use {
         },
         pod::{PodAccount, PodMint},
         processor::Processor,
-    },
-    solana_program::{
+    }, ethnum::U256, solana_program::{
         account_info::{next_account_info, AccountInfo},
         clock::Clock,
         entrypoint::ProgramResult,
@@ -21,8 +20,7 @@ use {
         program_option::COption,
         pubkey::Pubkey,
         sysvar::Sysvar,
-    },
-    std::convert::TryInto,
+    }, std::convert::TryInto
 };
 
 fn process_initialize_transfer_fee_config(
@@ -30,7 +28,7 @@ fn process_initialize_transfer_fee_config(
     transfer_fee_config_authority: COption<Pubkey>,
     withdraw_withheld_authority: COption<Pubkey>,
     transfer_fee_basis_points: u16,
-    maximum_fee: u64,
+    maximum_fee: U256,
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
     let mint_account_info = next_account_info(account_info_iter)?;
@@ -63,7 +61,7 @@ fn process_set_transfer_fee(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     transfer_fee_basis_points: u16,
-    maximum_fee: u64,
+    maximum_fee: U256,
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
     let mint_account_info = next_account_info(account_info_iter)?;

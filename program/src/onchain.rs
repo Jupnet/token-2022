@@ -7,6 +7,7 @@ use {
         instruction,
         state::Mint,
     },
+    ethnum::U256,
     solana_program::{
         account_info::AccountInfo, entrypoint::ProgramResult, instruction::AccountMeta,
         program::invoke_signed, pubkey::Pubkey,
@@ -24,7 +25,7 @@ pub fn invoke_transfer_checked<'a>(
     destination_info: AccountInfo<'a>,
     authority_info: AccountInfo<'a>,
     additional_accounts: &[AccountInfo<'a>],
-    amount: u64,
+    amount: U256,
     decimals: u8,
     seeds: &[&[&[u8]]],
 ) -> ProgramResult {
@@ -90,9 +91,9 @@ pub fn invoke_transfer_checked_with_fee<'a>(
     destination_info: AccountInfo<'a>,
     authority_info: AccountInfo<'a>,
     additional_accounts: &[AccountInfo<'a>],
-    amount: u64,
+    amount: U256,
     decimals: u8,
-    fee: u64,
+    fee: U256,
     seeds: &[&[&[u8]]],
 ) -> ProgramResult {
     let mut cpi_instruction = transfer_fee::instruction::transfer_checked_with_fee(

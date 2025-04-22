@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::TestContext,
     solana_program_test::tokio,
     solana_sdk::{
@@ -181,7 +182,7 @@ async fn single_extension() {
             None,
             None,
             10,
-            4242,
+            U256::new(4242),
         )
         .unwrap(),
         instruction::initialize_mint(

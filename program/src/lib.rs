@@ -25,6 +25,7 @@ mod entrypoint;
 // version
 use {
     error::TokenError,
+    ethnum::U256,
     solana_program::{
         entrypoint::ProgramResult, program_error::ProgramError, pubkey::Pubkey, system_program,
     },
@@ -46,7 +47,7 @@ pub fn amount_to_ui_amount(amount: u64, decimals: u8) -> f64 {
 
 /// Convert a raw amount to its UI representation (using the decimals field
 /// defined in its mint)
-pub fn amount_to_ui_amount_string(amount: u64, decimals: u8) -> String {
+pub fn amount_to_ui_amount_string(amount: U256, decimals: u8) -> String {
     let decimals = decimals as usize;
     if decimals > 0 {
         // Left-pad zeros to decimals + 1, so we at least have an integer zero
@@ -61,7 +62,7 @@ pub fn amount_to_ui_amount_string(amount: u64, decimals: u8) -> String {
 
 /// Convert a raw amount to its UI representation using the given decimals field
 /// Excess zeroes or unneeded decimal point are trimmed.
-pub fn amount_to_ui_amount_string_trimmed(amount: u64, decimals: u8) -> String {
+pub fn amount_to_ui_amount_string_trimmed(amount: U256, decimals: u8) -> String {
     let s = amount_to_ui_amount_string(amount, decimals);
     trim_ui_amount_string(s, decimals)
 }
@@ -77,7 +78,7 @@ fn trim_ui_amount_string(mut ui_amount: String, decimals: u8) -> String {
 
 /// Try to convert a UI representation of a token amount to its raw amount using
 /// the given decimals field
-pub fn try_ui_amount_into_amount(ui_amount: String, decimals: u8) -> Result<u64, ProgramError> {
+pub fn try_ui_amount_into_amount(ui_amount: String, decimals: u8) -> Result<U256, ProgramError> {
     let decimals = decimals as usize;
     let mut parts = ui_amount.split('.');
     // splitting a string, even an empty one, will always yield an iterator of at
@@ -97,7 +98,7 @@ pub fn try_ui_amount_into_amount(ui_amount: String, decimals: u8) -> Result<u64,
         amount_str.push('0');
     }
     amount_str
-        .parse::<u64>()
+        .parse::<U256>()
         .map_err(|_| ProgramError::InvalidArgument)
 }
 

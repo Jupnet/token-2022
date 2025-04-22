@@ -5,6 +5,7 @@ use {
 };
 use {
     crate::{check_program_account, error::TokenError, instruction::TokenInstruction},
+    ethnum::U256,
     solana_program::{
         instruction::{AccountMeta, Instruction},
         program_error::ProgramError,
@@ -46,7 +47,7 @@ pub enum TransferFeeInstruction {
         /// the transfer amount
         transfer_fee_basis_points: u16,
         /// Maximum fee assessed on transfers
-        maximum_fee: u64,
+        maximum_fee: U256,
     },
     /// Transfer, providing expected mint information and fees
     ///
@@ -72,13 +73,13 @@ pub enum TransferFeeInstruction {
     ///   4. `..4+M` `[signer]` M signer accounts.
     TransferCheckedWithFee {
         /// The amount of tokens to transfer.
-        amount: u64,
+        amount: U256,
         /// Expected number of base 10 digits to the right of the decimal place.
         decimals: u8,
         /// Expected fee assessed on this transfer, calculated off-chain based
         /// on the `transfer_fee_basis_points` and `maximum_fee` of the mint.
         /// May be 0 for a mint without a configured transfer fee.
-        fee: u64,
+        fee: U256,
     },
     /// Transfer all withheld tokens in the mint to an account. Signed by the
     /// mint's withdraw withheld tokens authority.
@@ -152,7 +153,7 @@ pub enum TransferFeeInstruction {
         /// the transfer amount
         transfer_fee_basis_points: u16,
         /// Maximum fee assessed on transfers
-        maximum_fee: u64,
+        maximum_fee: U256,
     },
 }
 impl TransferFeeInstruction {
@@ -168,7 +169,7 @@ impl TransferFeeInstruction {
                 let (withdraw_withheld_authority, rest) =
                     TokenInstruction::unpack_pubkey_option(rest)?;
                 let (transfer_fee_basis_points, rest) = TokenInstruction::unpack_u16(rest)?;
-                let (maximum_fee, _) = TokenInstruction::unpack_u64(rest)?;
+                let (maximum_fee, _) = TokenInstruction::unpack_u256(rest)?;
                 Self::InitializeTransferFeeConfig {
                     transfer_fee_config_authority,
                     withdraw_withheld_authority,
@@ -177,8 +178,8 @@ impl TransferFeeInstruction {
                 }
             }
             1 => {
-                let (amount, decimals, rest) = TokenInstruction::unpack_amount_decimals(rest)?;
-                let (fee, _) = TokenInstruction::unpack_u64(rest)?;
+                let (amount, decimals, rest) = TokenInstruction::unpack_amount_decimals_u256(rest)?;
+                let (fee, _) = TokenInstruction::unpack_u256(rest)?;
                 Self::TransferCheckedWithFee {
                     amount,
                     decimals,
@@ -193,7 +194,7 @@ impl TransferFeeInstruction {
             4 => Self::HarvestWithheldTokensToMint,
             5 => {
                 let (transfer_fee_basis_points, rest) = TokenInstruction::unpack_u16(rest)?;
-                let (maximum_fee, _) = TokenInstruction::unpack_u64(rest)?;
+                let (maximum_fee, _) = TokenInstruction::unpack_u256(rest)?;
                 Self::SetTransferFee {
                     transfer_fee_basis_points,
                     maximum_fee,
@@ -263,7 +264,7 @@ pub fn initialize_transfer_fee_config(
     transfer_fee_config_authority: Option<&Pubkey>,
     withdraw_withheld_authority: Option<&Pubkey>,
     transfer_fee_basis_points: u16,
-    maximum_fee: u64,
+    maximum_fee: U256,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
     let transfer_fee_config_authority = transfer_fee_config_authority.cloned().into();
@@ -291,9 +292,9 @@ pub fn transfer_checked_with_fee(
     destination: &Pubkey,
     authority: &Pubkey,
     signers: &[&Pubkey],
-    amount: u64,
+    amount: U256,
     decimals: u8,
-    fee: u64,
+    fee: U256,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
     let data = encode_instruction_data(TransferFeeInstruction::TransferCheckedWithFee {
@@ -400,7 +401,7 @@ pub fn set_transfer_fee(
     authority: &Pubkey,
     signers: &[&Pubkey],
     transfer_fee_basis_points: u16,
-    maximum_fee: u64,
+    maximum_fee: U256,
 ) -> Result<Instruction, ProgramError> {
     check_program_account(token_program_id)?;
     let mut accounts = Vec::with_capacity(2 + signers.len());
@@ -422,6 +423,8 @@ pub fn set_transfer_fee(
 
 #[cfg(test)]
 mod test {
+    use ethnum::AsU256;
+
     use super::*;
 
     #[test]
@@ -430,7 +433,7 @@ mod test {
             transfer_fee_config_authority: COption::Some(Pubkey::new_from_array([11u8; 32])),
             withdraw_withheld_authority: COption::None,
             transfer_fee_basis_points: 111,
-            maximum_fee: u64::MAX,
+            maximum_fee: U256::MAX,
         };
         let mut packed = vec![];
         check.pack(&mut packed);
@@ -438,22 +441,22 @@ mod test {
         expect.extend_from_slice(&[11u8; 32]);
         expect.extend_from_slice(&[0]);
         expect.extend_from_slice(&111u16.to_le_bytes());
-        expect.extend_from_slice(&u64::MAX.to_le_bytes());
+        expect.extend_from_slice(&U256::MAX.to_le_bytes());
         assert_eq!(packed, expect);
         let unpacked = TransferFeeInstruction::unpack(&expect).unwrap();
         assert_eq!(unpacked, check);
 
         let check = TransferFeeInstruction::TransferCheckedWithFee {
-            amount: 24,
+            amount: U256::from(24_u64),
             decimals: 24,
-            fee: 23,
+            fee: U256::from(23_u64),
         };
         let mut packed = vec![];
         check.pack(&mut packed);
         let mut expect = vec![1];
-        expect.extend_from_slice(&24u64.to_le_bytes());
+        expect.extend_from_slice(&24.as_u256().to_le_bytes());
         expect.extend_from_slice(&[24u8]);
-        expect.extend_from_slice(&23u64.to_le_bytes());
+        expect.extend_from_slice(&23.as_u256().to_le_bytes());
         assert_eq!(packed, expect);
         let unpacked = TransferFeeInstruction::unpack(&expect).unwrap();
         assert_eq!(unpacked, check);
@@ -486,13 +489,13 @@ mod test {
 
         let check = TransferFeeInstruction::SetTransferFee {
             transfer_fee_basis_points: u16::MAX,
-            maximum_fee: u64::MAX,
+            maximum_fee: U256::MAX,
         };
         let mut packed = vec![];
         check.pack(&mut packed);
         let mut expect = vec![5];
         expect.extend_from_slice(&u16::MAX.to_le_bytes());
-        expect.extend_from_slice(&u64::MAX.to_le_bytes());
+        expect.extend_from_slice(&U256::MAX.to_le_bytes());
         assert_eq!(packed, expect);
         let unpacked = TransferFeeInstruction::unpack(&expect).unwrap();
         assert_eq!(unpacked, check);

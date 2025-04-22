@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::{
         tokio::{self, sync::Mutex},
@@ -23,13 +24,13 @@ async fn run_basic(
     assert_eq!(account_info.base.amount, 0);
 
     // system transfer to account
-    let amount = 1_000;
+    let amount = U256::new(1_000);
     {
         let context = context.lock().await;
         let instructions = vec![system_instruction::transfer(
             &context.payer.pubkey(),
             &account,
-            amount,
+            amount.as_u64(),
         )];
         let tx = Transaction::new_signed_with_payer(
             &instructions,

@@ -8,6 +8,7 @@ use {
         processor::Processor,
         state::Account,
     },
+    ethnum::U256,
     solana_program::{
         account_info::{next_account_info, AccountInfo},
         entrypoint::ProgramResult,
@@ -79,7 +80,7 @@ pub fn process_reallocate(
 
     let current_lamport_reserve = token_account_info
         .lamports()
-        .checked_sub(native_token_amount.unwrap_or(0))
+        .checked_sub(native_token_amount.unwrap_or(U256::ZERO).as_u64())
         .ok_or(TokenError::Overflow)?;
     let lamports_diff = new_rent_exempt_reserve.saturating_sub(current_lamport_reserve);
     if lamports_diff > 0 {
@@ -103,7 +104,7 @@ pub fn process_reallocate(
         // sanity check that there are enough lamports to cover the token amount
         // and the rent exempt reserve
         let minimum_lamports = new_rent_exempt_reserve
-            .checked_add(native_token_amount)
+            .checked_add(native_token_amount.as_u64())
             .ok_or(TokenError::Overflow)?;
         if token_account_info.lamports() < minimum_lamports {
             return Err(TokenError::InvalidState.into());

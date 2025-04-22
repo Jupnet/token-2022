@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     futures_util::TryFutureExt,
     program_test::{
         ConfidentialTokenAccountBalances, ConfidentialTokenAccountMeta, TestContext, TokenContext,
@@ -50,7 +51,7 @@ async fn setup_accounts(
     token_context: &TokenContext,
     alice_account: Keypair,
     bob_account: Keypair,
-    amount: u64,
+    amount: U256,
 ) -> (Pubkey, Pubkey) {
     token_context
         .token
@@ -165,7 +166,7 @@ async fn setup_with_fee(mint: Keypair, program_id: &Pubkey, authority: &Pubkey) 
     let transfer_fee_config_authority = Keypair::new();
     let withdraw_withheld_authority = Keypair::new();
     let transfer_fee_basis_points = TEST_FEE_BASIS_POINTS;
-    let maximum_fee = TEST_MAXIMUM_FEE;
+    let maximum_fee = U256::from(TEST_MAXIMUM_FEE);
     add_validation_account(&mut program_test, &mint.pubkey(), program_id);
 
     let context = program_test.start_with_context().await;
@@ -434,7 +435,7 @@ async fn success_transfer() {
         .token_context
         .take()
         .unwrap();
-    let amount = 10;
+    let amount = U256::from(10_u64);
     let (alice_account, bob_account) =
         setup_accounts(&token_context, Keypair::new(), Keypair::new(), amount).await;
 
@@ -486,8 +487,8 @@ async fn success_transfer_with_fee() {
     let program_id = Pubkey::new_unique();
     let mint_keypair = Keypair::new();
 
-    let maximum_fee = TEST_MAXIMUM_FEE;
-    let alice_amount = maximum_fee * 100;
+    let maximum_fee = U256::from(TEST_MAXIMUM_FEE);
+    let alice_amount = maximum_fee * U256::from(100_u64);
     let transfer_amount = maximum_fee;
 
     let token_context = setup_with_fee(mint_keypair, &program_id, &authority.pubkey())
@@ -610,7 +611,7 @@ async fn fail_transfer_hook_program() {
         .unwrap();
     let token_context = context.token_context.take().unwrap();
 
-    let amount = 10;
+    let amount = U256::from(10_u64);
     let (alice_account, bob_account) =
         setup_accounts(&token_context, Keypair::new(), Keypair::new(), amount).await;
 
@@ -687,7 +688,7 @@ async fn success_downgrade_writable_and_signer_accounts() {
     let mut token_context = context.token_context.take().unwrap();
     token_context.alice = alice;
 
-    let amount = 10;
+    let amount = U256::from(10_u64);
     let (alice_account, bob_account) =
         setup_accounts(&token_context, alice_account, Keypair::new(), amount).await;
 
@@ -712,7 +713,7 @@ async fn success_transfers_using_onchain_helper() {
     let mint_a = mint_a_keypair.pubkey();
     let mint_b_keypair = Keypair::new();
     let mint_b = mint_b_keypair.pubkey();
-    let amount = 10;
+    let amount = U256::from(10_u64);
 
     let swap_program_id = Pubkey::new_unique();
     let mut program_test = setup_program_test(&program_id);
@@ -827,16 +828,16 @@ async fn success_transfers_using_onchain_helper() {
 async fn success_transfers_with_fee_using_onchain_helper() {
     let authority = Pubkey::new_unique();
     let program_id = Pubkey::new_unique();
-    let mint_a_keypair = Keypair::new();
+    let mint_a_keypair: Keypair = Keypair::new();
     let mint_a = mint_a_keypair.pubkey();
     let mint_b_keypair = Keypair::new();
     let mint_b = mint_b_keypair.pubkey();
-    let amount = 10_000_000_000;
+    let amount = U256::from(10_000_000_000_u64);
 
     let transfer_fee_config_authority = Keypair::new();
     let withdraw_withheld_authority = Keypair::new();
     let transfer_fee_basis_points = TEST_FEE_BASIS_POINTS;
-    let maximum_fee = TEST_MAXIMUM_FEE;
+    let maximum_fee = U256::from(TEST_MAXIMUM_FEE);
 
     let swap_program_id = Pubkey::new_unique();
     let mut program_test = setup_program_test(&program_id);
@@ -978,7 +979,7 @@ async fn success_confidential_transfer() {
             .token_context
             .take()
             .unwrap();
-    let amount = 10;
+    let amount = U256::new(10);
 
     let TokenContext {
         token,
@@ -1011,7 +1012,7 @@ async fn success_confidential_transfer() {
             None,
             None,
             None,
-            amount,
+            amount.as_u64(),
             None,
             &alice_meta.elgamal_keypair,
             &alice_meta.aes_key,
@@ -1041,7 +1042,7 @@ async fn success_confidential_transfer() {
         .check_balances(
             &token,
             ConfidentialTokenAccountBalances {
-                pending_balance_lo: amount,
+                pending_balance_lo: amount.as_u64(),
                 pending_balance_hi: 0,
                 available_balance: 0,
                 decryptable_available_balance: 0,
@@ -1098,7 +1099,7 @@ async fn success_without_validation_account() {
         .unwrap();
     let token_context = context.token_context.take().unwrap();
 
-    let amount = 10;
+    let amount = U256::from(10_u64);
     let (alice_account, bob_account) =
         setup_accounts(&token_context, Keypair::new(), Keypair::new(), amount).await;
 

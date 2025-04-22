@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::{
         tokio::{self, sync::Mutex},
@@ -40,7 +41,7 @@ async fn test_memo_transfers(
         .mint_to(
             &alice_account,
             &mint_authority.pubkey(),
-            4242,
+            U256::new(4242),
             &[&mint_authority],
         )
         .await
@@ -58,7 +59,13 @@ async fn test_memo_transfers(
 
     // attempt to transfer from alice to bob without memo
     let err = token
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 10, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::new(10),
+            &[&alice],
+        )
         .await
         .unwrap_err();
     assert_eq!(
@@ -75,7 +82,13 @@ async fn test_memo_transfers(
 
     // attempt to transfer from bob to bob without memo
     let err = token
-        .transfer(&bob_account, &bob_account, &bob.pubkey(), 0, &[&bob])
+        .transfer(
+            &bob_account,
+            &bob_account,
+            &bob.pubkey(),
+            U256::ZERO,
+            &[&bob],
+        )
         .await
         .unwrap_err();
     assert_eq!(
@@ -105,7 +118,7 @@ async fn test_memo_transfers(
                 &bob_account,
                 &alice.pubkey(),
                 &[],
-                10,
+                U256::new(10),
             )
             .unwrap(),
         ];
@@ -136,7 +149,13 @@ async fn test_memo_transfers(
     // transfer with memo
     token
         .with_memo("🦖", vec![alice.pubkey()])
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 10, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::new(10),
+            &[&alice],
+        )
         .await
         .unwrap();
     let bob_state = token.get_account_info(&bob_account).await.unwrap();
@@ -154,7 +173,7 @@ async fn test_memo_transfers(
             &bob_account,
             &alice.pubkey(),
             &[],
-            11,
+            U256::new(11),
         )
         .unwrap(),
     ];
@@ -177,7 +196,13 @@ async fn test_memo_transfers(
 
     // transfer from alice to bob without memo
     token
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 12, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::new(12),
+            &[&alice],
+        )
         .await
         .unwrap();
     let bob_state = token.get_account_info(&bob_account).await.unwrap();

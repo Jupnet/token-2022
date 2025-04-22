@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -18,7 +19,7 @@ use {
 
 #[tokio::test]
 async fn transfer() {
-    let test_transfer_amount = 100;
+    let test_transfer_amount = U256::new(100);
     let mut context = TestContext::new().await;
     context
         .init_token_with_mint(vec![ExtensionInitializationParams::NonTransferable])
@@ -149,8 +150,8 @@ async fn transfer() {
 
 #[tokio::test]
 async fn transfer_checked_with_fee() {
-    let test_transfer_amount = 100;
-    let maximum_fee = 10;
+    let test_transfer_amount = U256::new(100);
+    let maximum_fee = U256::new(10);
     let transfer_fee_basis_points = 100;
 
     let transfer_fee_config_authority = Keypair::new();

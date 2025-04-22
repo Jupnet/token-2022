@@ -3,6 +3,7 @@ use {
         ProgramClient, ProgramClientError, SendTransaction, SimulateTransaction, SimulationResult,
     },
     bytemuck::{bytes_of, Pod},
+    ethnum::U256,
     futures::future::join_all,
     futures_util::TryFutureExt,
     solana_program_test::tokio::time,
@@ -159,7 +160,7 @@ pub enum ExtensionInitializationParams {
         transfer_fee_config_authority: Option<Pubkey>,
         withdraw_withheld_authority: Option<Pubkey>,
         transfer_fee_basis_points: u16,
-        maximum_fee: u64,
+        maximum_fee: U256,
     },
     InterestBearingConfig {
         rate_authority: Option<Pubkey>,
@@ -994,7 +995,7 @@ where
         &self,
         destination: &Pubkey,
         authority: &Pubkey,
-        amount: u64,
+        amount: U256,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
         let signing_pubkeys = signing_keypairs.pubkeys();
@@ -1031,7 +1032,7 @@ where
         source: &Pubkey,
         destination: &Pubkey,
         authority: &Pubkey,
-        amount: u64,
+        amount: U256,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
         let signing_pubkeys = signing_keypairs.pubkeys();
@@ -1096,8 +1097,8 @@ where
         destination: &Pubkey,
         destination_owner: &Pubkey,
         authority: &Pubkey,
-        amount: u64,
-        fee: Option<u64>,
+        amount: U256,
+        fee: Option<U256>,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
         let signing_pubkeys = signing_keypairs.pubkeys();
@@ -1188,8 +1189,8 @@ where
         source: &Pubkey,
         destination: &Pubkey,
         authority: &Pubkey,
-        amount: u64,
-        fee: u64,
+        amount: U256,
+        fee: U256,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
         let signing_pubkeys = signing_keypairs.pubkeys();
@@ -1241,7 +1242,7 @@ where
         &self,
         source: &Pubkey,
         authority: &Pubkey,
-        amount: u64,
+        amount: U256,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
         let signing_pubkeys = signing_keypairs.pubkeys();
@@ -1277,7 +1278,7 @@ where
         source: &Pubkey,
         delegate: &Pubkey,
         authority: &Pubkey,
-        amount: u64,
+        amount: U256,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
         let signing_pubkeys = signing_keypairs.pubkeys();
@@ -1577,7 +1578,7 @@ where
         &self,
         authority: &Pubkey,
         transfer_fee_basis_points: u16,
-        maximum_fee: u64,
+        maximum_fee: U256,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
         let signing_pubkeys = signing_keypairs.pubkeys();
@@ -2176,7 +2177,7 @@ where
         &self,
         account: &Pubkey,
         authority: &Pubkey,
-        amount: u64,
+        amount: U256,
         decimals: u8,
         signing_keypairs: &S,
     ) -> TokenResult<T::Output> {
@@ -2424,7 +2425,7 @@ where
             self.get_address(),
             destination_account,
             source_authority,
-            u64::MAX,
+            U256::MAX,
             |address| {
                 self.client
                     .get_account(address)
@@ -2821,7 +2822,7 @@ where
             self.get_address(),
             destination_account,
             source_authority,
-            u64::MAX,
+            U256::MAX,
             |address| {
                 self.client
                     .get_account(address)

@@ -1,3 +1,4 @@
+use ethnum::{AsU256, U256};
 #[cfg(feature = "serde-traits")]
 use serde::{Deserialize, Serialize};
 use {
@@ -70,11 +71,11 @@ impl ScaledUiAmountConfig {
     /// field. Excess zeroes or unneeded decimal point are trimmed.
     pub fn amount_to_ui_amount(
         &self,
-        amount: u64,
+        amount: U256,
         decimals: u8,
         unix_timestamp: i64,
     ) -> Option<String> {
-        let scaled_amount = (amount as f64) * self.total_multiplier(decimals, unix_timestamp);
+        let scaled_amount = amount.as_f64() * self.total_multiplier(decimals, unix_timestamp);
         let ui_amount = format!("{scaled_amount:.*}", decimals as usize);
         Some(trim_ui_amount_string(ui_amount, decimals))
     }
@@ -86,17 +87,17 @@ impl ScaledUiAmountConfig {
         ui_amount: &str,
         decimals: u8,
         unix_timestamp: i64,
-    ) -> Result<u64, ProgramError> {
+    ) -> Result<U256, ProgramError> {
         let scaled_amount = ui_amount
             .parse::<f64>()
             .map_err(|_| ProgramError::InvalidArgument)?;
         let amount = scaled_amount / self.total_multiplier(decimals, unix_timestamp);
-        if amount > (u64::MAX as f64) || amount < (u64::MIN as f64) || amount.is_nan() {
+        if amount > (U256::MAX.as_f64()) || amount < (U256::MIN.as_f64()) || amount.is_nan() {
             Err(ProgramError::InvalidArgument)
         } else {
             // this is important, if you round earlier, you'll get wrong "inf"
             // answers
-            Ok(amount.round() as u64)
+            Ok(amount.round().as_u256())
         }
     }
 }
@@ -145,17 +146,21 @@ mod tests {
             new_multiplier_effective_timestamp: UnixTimestamp::from(1),
             ..Default::default()
         };
-        let ui_amount = config.amount_to_ui_amount(1, 0, 0).unwrap();
+        let ui_amount = config.amount_to_ui_amount(U256::from(1_u64), 0, 0).unwrap();
         assert_eq!(ui_amount, "5");
         // with 1 decimal place
-        let ui_amount = config.amount_to_ui_amount(1, 1, 0).unwrap();
+        let ui_amount = config.amount_to_ui_amount(U256::from(1_u64), 1, 0).unwrap();
         assert_eq!(ui_amount, "0.5");
         // with 10 decimal places
-        let ui_amount = config.amount_to_ui_amount(1, 10, 0).unwrap();
+        let ui_amount = config
+            .amount_to_ui_amount(U256::from(1_u64), 10, 0)
+            .unwrap();
         assert_eq!(ui_amount, "0.0000000005");
 
         // huge amount with 10 decimal places
-        let ui_amount = config.amount_to_ui_amount(10_000_000_000, 10, 0).unwrap();
+        let ui_amount = config
+            .amount_to_ui_amount(U256::from(10_000_000_000_u64), 10, 0)
+            .unwrap();
         assert_eq!(ui_amount, "5");
 
         // huge values
@@ -165,7 +170,7 @@ mod tests {
             new_multiplier_effective_timestamp: UnixTimestamp::from(1),
             ..Default::default()
         };
-        let ui_amount = config.amount_to_ui_amount(u64::MAX, 0, 0).unwrap();
+        let ui_amount = config.amount_to_ui_amount(U256::MAX, 0, 0).unwrap();
         assert_eq!(ui_amount, "inf");
     }
 
@@ -207,7 +212,7 @@ mod tests {
         let amount = config
             .try_ui_amount_into_amount("92233720368547758075", 0, 0)
             .unwrap();
-        assert_eq!(amount, u64::MAX);
+        assert_eq!(amount, U256::MAX);
         let config = ScaledUiAmountConfig {
             authority: OptionalNonZeroPubkey::default(),
             multiplier: f64::MAX.into(),
@@ -228,12 +233,12 @@ mod tests {
         let amount = config
             .try_ui_amount_into_amount("1.7976931348623157e308", 0, 0)
             .unwrap();
-        assert_eq!(amount, u64::MAX);
+        assert_eq!(amount, U256::MAX);
         // scientific notation "E"
         let amount = config
             .try_ui_amount_into_amount("1.7976931348623157E308", 0, 0)
             .unwrap();
-        assert_eq!(amount, u64::MAX);
+        assert_eq!(amount, U256::MAX);
 
         // this is unfortunate, but underflows can happen due to floats
         let config = ScaledUiAmountConfig {
@@ -243,9 +248,9 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(
-            u64::MAX,
+            U256::MAX,
             config
-                .try_ui_amount_into_amount("18446744073709551616", 0, 0)
+                .try_ui_amount_into_amount("115792089237316195423570985008687907853269984665640564039457584007913129639935", 0, 0)
                 .unwrap() // u64::MAX + 1
         );
 
@@ -277,9 +282,14 @@ mod tests {
             new_multiplier_effective_timestamp: UnixTimestamp::from(1),
             ..Default::default()
         };
-        for (amount, expected) in [(23, "0.23"), (110, "1.1"), (4200, "42"), (0, "0")] {
+        for (amount, expected) in [
+            (23_u64, "0.23"),
+            (110_u64, "1.1"),
+            (4200_u64, "42"),
+            (0_u64, "0"),
+        ] {
             let ui_amount = config
-                .amount_to_ui_amount(amount, TEST_DECIMALS, 0)
+                .amount_to_ui_amount(U256::from(amount), TEST_DECIMALS, 0)
                 .unwrap();
             assert_eq!(ui_amount, expected);
         }
@@ -329,7 +339,7 @@ mod tests {
         #[test]
         fn amount_to_ui_amount(
             scale in 0f64..=f64::MAX,
-            amount in 0..=u64::MAX,
+            amount in 0..=u64::MAX, // TODO: change to U256::MAX
             decimals in 0u8..20u8,
         ) {
             let config = ScaledUiAmountConfig {
@@ -338,7 +348,7 @@ mod tests {
                 new_multiplier_effective_timestamp: UnixTimestamp::from(1),
                 ..Default::default()
             };
-            let ui_amount = config.amount_to_ui_amount(amount, decimals, 0);
+            let ui_amount = config.amount_to_ui_amount(U256::from(amount), decimals, 0);
             assert!(ui_amount.is_some());
         }
     }

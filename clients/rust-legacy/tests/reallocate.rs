@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -162,7 +163,7 @@ async fn reallocate_without_current_extension_knowledge() {
             transfer_fee_config_authority: COption::Some(Pubkey::new_unique()).into(),
             withdraw_withheld_authority: COption::Some(Pubkey::new_unique()).into(),
             transfer_fee_basis_points: 250,
-            maximum_fee: 10_000_000,
+            maximum_fee: U256::new(10_000_000),
         }])
         .await
         .unwrap();
@@ -247,7 +248,7 @@ async fn reallocate_updates_native_rent_exemption(
     if sync_native {
         token.sync_native(&alice_account).await.unwrap();
         let account_info = token.get_account_info(&alice_account).await.unwrap();
-        assert_eq!(account_info.base.amount, transfer_lamports);
+        assert_eq!(account_info.base.amount.as_u64(), transfer_lamports);
     }
 
     let token_account = token.get_account_info(&alice_account).await.unwrap();

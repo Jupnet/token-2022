@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -40,7 +41,7 @@ async fn run_basic_transfers(context: TestContext, test_mode: TestMode) {
     let bob_account = bob_account.pubkey();
 
     // mint a token
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -54,14 +55,26 @@ async fn run_basic_transfers(context: TestContext, test_mode: TestMode) {
     if test_mode == TestMode::All {
         // unchecked is ok
         token_unchecked
-            .transfer(&alice_account, &bob_account, &alice.pubkey(), 1, &[&alice])
+            .transfer(
+                &alice_account,
+                &bob_account,
+                &alice.pubkey(),
+                U256::ONE,
+                &[&alice],
+            )
             .await
             .unwrap();
     }
 
     // checked is ok
     token
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 1, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::ONE,
+            &[&alice],
+        )
         .await
         .unwrap();
 
@@ -88,7 +101,13 @@ async fn run_basic_transfers(context: TestContext, test_mode: TestMode) {
 
     // wrong signer
     let error = token
-        .transfer(&alice_account, &bob_account, &bob.pubkey(), 1, &[&bob])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &bob.pubkey(),
+            U256::ONE,
+            &[&bob],
+        )
         .await
         .unwrap_err();
     assert_eq!(
@@ -117,7 +136,7 @@ async fn basic_with_extension() {
             transfer_fee_config_authority: Some(Pubkey::new_unique()),
             withdraw_withheld_authority: Some(Pubkey::new_unique()),
             transfer_fee_basis_points: 100u16,
-            maximum_fee: 1_000_000u64,
+            maximum_fee: U256::from(1_000_000u64),
         }])
         .await
         .unwrap();
@@ -141,7 +160,7 @@ async fn run_self_transfers(context: TestContext, test_mode: TestMode) {
     let alice_account = alice_account.pubkey();
 
     // mint a token
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -158,7 +177,7 @@ async fn run_self_transfers(context: TestContext, test_mode: TestMode) {
             &alice_account,
             &alice_account,
             &alice.pubkey(),
-            1,
+            U256::ONE,
             &[&alice],
         )
         .await
@@ -169,7 +188,7 @@ async fn run_self_transfers(context: TestContext, test_mode: TestMode) {
                 &alice_account,
                 &alice_account,
                 &alice.pubkey(),
-                1,
+                U256::ONE,
                 &[&alice],
             )
             .await
@@ -182,7 +201,7 @@ async fn run_self_transfers(context: TestContext, test_mode: TestMode) {
             &alice_account,
             &alice_account,
             &alice.pubkey(),
-            amount.checked_add(1).unwrap(),
+            amount.checked_add(U256::ONE).unwrap(),
             &[&alice],
         )
         .await
@@ -213,7 +232,7 @@ async fn self_transfer_with_extension() {
             transfer_fee_config_authority: Some(Pubkey::new_unique()),
             withdraw_withheld_authority: Some(Pubkey::new_unique()),
             transfer_fee_basis_points: 100u16,
-            maximum_fee: 1_000_000u64,
+            maximum_fee: U256::from(1_000_000u64),
         }])
         .await
         .unwrap();
@@ -243,7 +262,7 @@ async fn run_self_owned(context: TestContext, test_mode: TestMode) {
     let bob_account = bob_account.pubkey();
 
     // mint a token
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -257,14 +276,26 @@ async fn run_self_owned(context: TestContext, test_mode: TestMode) {
     if test_mode == TestMode::All {
         // unchecked is ok
         token_unchecked
-            .transfer(&alice_account, &bob_account, &alice.pubkey(), 1, &[&alice])
+            .transfer(
+                &alice_account,
+                &bob_account,
+                &alice.pubkey(),
+                U256::ONE,
+                &[&alice],
+            )
             .await
             .unwrap();
     }
 
     // checked is ok
     token
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 1, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::ONE,
+            &[&alice],
+        )
         .await
         .unwrap();
 
@@ -274,7 +305,7 @@ async fn run_self_owned(context: TestContext, test_mode: TestMode) {
             &alice_account,
             &alice_account,
             &alice.pubkey(),
-            1,
+            U256::ONE,
             &[&alice],
         )
         .await
@@ -296,7 +327,7 @@ async fn self_owned_with_extension() {
             transfer_fee_config_authority: Some(Pubkey::new_unique()),
             withdraw_withheld_authority: Some(Pubkey::new_unique()),
             transfer_fee_basis_points: 100u16,
-            maximum_fee: 1_000_000u64,
+            maximum_fee: U256::from(1_000_000u64),
         }])
         .await
         .unwrap();
@@ -329,7 +360,7 @@ async fn transfer_with_fee_on_mint_without_fee_configured() {
     let bob_account = bob_account.pubkey();
 
     // mint some tokens
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -346,8 +377,8 @@ async fn transfer_with_fee_on_mint_without_fee_configured() {
             &alice_account,
             &bob_account,
             &alice.pubkey(),
-            1,
-            0,
+            U256::ONE,
+            U256::ZERO,
             &[&alice],
         )
         .await
@@ -359,8 +390,8 @@ async fn transfer_with_fee_on_mint_without_fee_configured() {
             &alice_account,
             &bob_account,
             &alice.pubkey(),
-            2,
-            1,
+            U256::new(2),
+            U256::ONE,
             &[&alice],
         )
         .await

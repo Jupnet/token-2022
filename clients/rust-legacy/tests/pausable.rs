@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -138,7 +139,7 @@ async fn pause_mint() {
         .await
         .unwrap();
 
-    let amount = 10;
+    let amount = U256::new(10);
     let error = token
         .mint_to(
             &alice_account,
@@ -203,7 +204,7 @@ async fn pause_burn() {
         .unwrap();
     let alice_account = alice_account.pubkey();
 
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -220,7 +221,7 @@ async fn pause_burn() {
         .unwrap();
 
     let error = token_unchecked
-        .burn(&alice_account, &alice.pubkey(), 1, &[&alice])
+        .burn(&alice_account, &alice.pubkey(), U256::ONE, &[&alice])
         .await
         .unwrap_err();
 
@@ -235,7 +236,7 @@ async fn pause_burn() {
     );
 
     let error = token
-        .burn(&alice_account, &alice.pubkey(), 1, &[&alice])
+        .burn(&alice_account, &alice.pubkey(), U256::ONE, &[&alice])
         .await
         .unwrap_err();
 
@@ -283,7 +284,7 @@ async fn pause_transfer() {
         .unwrap();
     let bob_account = bob_account.pubkey();
 
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -300,7 +301,13 @@ async fn pause_transfer() {
         .unwrap();
 
     let error = token_unchecked
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 1, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::ONE,
+            &[&alice],
+        )
         .await
         .unwrap_err();
 
@@ -316,7 +323,13 @@ async fn pause_transfer() {
     );
 
     let error = token
-        .transfer(&alice_account, &bob_account, &alice.pubkey(), 1, &[&alice])
+        .transfer(
+            &alice_account,
+            &bob_account,
+            &alice.pubkey(),
+            U256::ONE,
+            &[&alice],
+        )
         .await
         .unwrap_err();
 
@@ -335,8 +348,8 @@ async fn pause_transfer() {
             &alice_account,
             &bob_account,
             &alice.pubkey(),
-            1,
-            0,
+            U256::ONE,
+            U256::ZERO,
             &[&alice],
         )
         .await

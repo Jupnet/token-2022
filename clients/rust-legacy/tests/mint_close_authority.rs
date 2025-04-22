@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -258,7 +259,12 @@ async fn fail_close_with_supply() {
         .unwrap();
     let account = account.pubkey();
     token
-        .mint_to(&account, &mint_authority.pubkey(), 1, &[&mint_authority])
+        .mint_to(
+            &account,
+            &mint_authority.pubkey(),
+            U256::ONE,
+            &[&mint_authority],
+        )
         .await
         .unwrap();
 

@@ -1,5 +1,7 @@
+use ethnum::U256;
 #[cfg(feature = "serde-traits")]
 use serde::{Deserialize, Serialize};
+use spl_pod::primitives::PodU256;
 use {
     crate::{
         error::TokenError,
@@ -11,10 +13,7 @@ use {
         optional_keys::OptionalNonZeroPubkey,
         primitives::{PodU16, PodU64},
     },
-    std::{
-        cmp,
-        convert::{TryFrom, TryInto},
-    },
+    std::{cmp, convert::TryInto},
 };
 
 /// Transfer fee extension instructions
@@ -36,7 +35,7 @@ pub struct TransferFee {
     /// First epoch where the transfer fee takes effect
     pub epoch: PodU64, // Epoch,
     /// Maximum fee assessed on transfers, expressed as an amount of tokens
-    pub maximum_fee: PodU64,
+    pub maximum_fee: PodU256,
     /// Amount of transfer collected as fees, expressed as basis points of the
     /// transfer amount (increments of `0.01%`)
     pub transfer_fee_basis_points: PodU16,
@@ -48,31 +47,32 @@ impl TransferFee {
     ///     `ceil[ numerator / denominator ]`
     /// can be represented as a floor-division
     ///     `floor[ (numerator + denominator - 1) / denominator]`
-    fn ceil_div(numerator: u128, denominator: u128) -> Option<u128> {
+    fn ceil_div(numerator: U256, denominator: U256) -> Option<U256> {
         numerator
             .checked_add(denominator)?
-            .checked_sub(1)?
+            .checked_sub(U256::ONE)?
             .checked_div(denominator)
     }
 
     /// Calculate the transfer fee
-    pub fn calculate_fee(&self, pre_fee_amount: u64) -> Option<u64> {
+    pub fn calculate_fee(&self, pre_fee_amount: U256) -> Option<U256> {
         let transfer_fee_basis_points = u16::from(self.transfer_fee_basis_points) as u128;
-        if transfer_fee_basis_points == 0 || pre_fee_amount == 0 {
-            Some(0)
+        if transfer_fee_basis_points == U256::ZERO || pre_fee_amount == U256::ZERO {
+            Some(U256::ZERO)
         } else {
-            let numerator = (pre_fee_amount as u128).checked_mul(transfer_fee_basis_points)?;
-            let raw_fee = Self::ceil_div(numerator, ONE_IN_BASIS_POINTS)?
+            let numerator = pre_fee_amount.checked_mul(U256::from(transfer_fee_basis_points))?;
+            let raw_fee = Self::ceil_div(numerator, U256::from(ONE_IN_BASIS_POINTS))?
                 .try_into() // guaranteed to be okay
                 .ok()?;
 
-            Some(cmp::min(raw_fee, u64::from(self.maximum_fee)))
+            Some(cmp::min(raw_fee, U256::from(self.maximum_fee)))
         }
     }
 
     /// Calculate the gross transfer amount after deducting fees
-    pub fn calculate_post_fee_amount(&self, pre_fee_amount: u64) -> Option<u64> {
-        pre_fee_amount.checked_sub(self.calculate_fee(pre_fee_amount)?)
+    pub fn calculate_post_fee_amount(&self, pre_fee_amount: U256) -> Option<U256> {
+        let fee = self.calculate_fee(pre_fee_amount)?;
+        pre_fee_amount.checked_sub(fee)
     }
 
     /// Calculate the transfer amount that will result in a specified net
@@ -87,27 +87,26 @@ impl TransferFee {
     /// The original transfer amount may not always exist on large net transfer
     /// amounts due to overflow. In this case, `None` is returned.
     /// e.g. The net fee amount is `u64::MAX` with a positive fee rate.
-    pub fn calculate_pre_fee_amount(&self, post_fee_amount: u64) -> Option<u64> {
-        let maximum_fee = u64::from(self.maximum_fee);
+    pub fn calculate_pre_fee_amount(&self, post_fee_amount: U256) -> Option<U256> {
+        let maximum_fee = U256::from(self.maximum_fee);
         let transfer_fee_basis_points = u16::from(self.transfer_fee_basis_points) as u128;
-        match (transfer_fee_basis_points, post_fee_amount) {
-            // no fee, same amount
-            (0, _) => Some(post_fee_amount),
-            // 0 zero out, 0 in
-            (_, 0) => Some(0),
-            // 100%, cap at max fee
-            (ONE_IN_BASIS_POINTS, _) => maximum_fee.checked_add(post_fee_amount),
-            _ => {
-                let numerator = (post_fee_amount as u128).checked_mul(ONE_IN_BASIS_POINTS)?;
-                let denominator = ONE_IN_BASIS_POINTS.checked_sub(transfer_fee_basis_points)?;
-                let raw_pre_fee_amount = Self::ceil_div(numerator, denominator)?;
 
-                if raw_pre_fee_amount.checked_sub(post_fee_amount as u128)? >= maximum_fee as u128 {
-                    post_fee_amount.checked_add(maximum_fee)
-                } else {
-                    // should return `None` if `pre_fee_amount` overflows
-                    u64::try_from(raw_pre_fee_amount).ok()
-                }
+        if transfer_fee_basis_points == 0 {
+            Some(post_fee_amount)
+        } else if post_fee_amount.eq(&U256::ZERO) {
+            Some(U256::ZERO)
+        } else if transfer_fee_basis_points == ONE_IN_BASIS_POINTS {
+            maximum_fee.checked_add(post_fee_amount)
+        } else {
+            let numerator = post_fee_amount.checked_mul(U256::from(ONE_IN_BASIS_POINTS))?;
+            let denominator = ONE_IN_BASIS_POINTS.checked_sub(transfer_fee_basis_points)?;
+            let raw_pre_fee_amount = Self::ceil_div(numerator, U256::from(denominator))?;
+
+            if raw_pre_fee_amount.checked_sub(post_fee_amount)? >= maximum_fee {
+                post_fee_amount.checked_add(maximum_fee)
+            } else {
+                // should return `None` if `pre_fee_amount` overflows
+                Some(raw_pre_fee_amount)
             }
         }
     }
@@ -123,8 +122,10 @@ impl TransferFee {
     ///
     /// `calculate_fee(x) >= calculate_inverse_fee(x - calculate_fee(x))`
     pub fn calculate_inverse_fee(&self, post_fee_amount: u64) -> Option<u64> {
-        let pre_fee_amount = self.calculate_pre_fee_amount(post_fee_amount)?;
+        let pre_fee_amount = self.calculate_pre_fee_amount(U256::from(post_fee_amount))?;
         self.calculate_fee(pre_fee_amount)
+            .map(|fee| fee.try_into().ok())
+            .flatten()
     }
 }
 
@@ -156,13 +157,15 @@ impl TransferFeeConfig {
         }
     }
     /// Calculate the fee for the given epoch and input amount
-    pub fn calculate_epoch_fee(&self, epoch: Epoch, pre_fee_amount: u64) -> Option<u64> {
+    pub fn calculate_epoch_fee(&self, epoch: Epoch, pre_fee_amount: U256) -> Option<U256> {
         self.get_epoch_fee(epoch).calculate_fee(pre_fee_amount)
     }
     /// Calculate the fee for the given epoch and output amount
-    pub fn calculate_inverse_epoch_fee(&self, epoch: Epoch, post_fee_amount: u64) -> Option<u64> {
+    pub fn calculate_inverse_epoch_fee(&self, epoch: Epoch, post_fee_amount: U256) -> Option<U256> {
+        let post_fee_u64: u64 = post_fee_amount.try_into().ok()?;
         self.get_epoch_fee(epoch)
-            .calculate_inverse_fee(post_fee_amount)
+            .calculate_inverse_fee(post_fee_u64)
+            .map(U256::from)
     }
 }
 impl Extension for TransferFeeConfig {
@@ -212,12 +215,12 @@ pub(crate) mod test {
             withheld_amount: PodU64::from(u64::MAX),
             older_transfer_fee: TransferFee {
                 epoch: PodU64::from(OLDER_EPOCH),
-                maximum_fee: PodU64::from(10),
+                maximum_fee: PodU256::from(10),
                 transfer_fee_basis_points: PodU16::from(100),
             },
             newer_transfer_fee: TransferFee {
                 epoch: PodU64::from(NEWER_EPOCH),
-                maximum_fee: PodU64::from(5_000),
+                maximum_fee: PodU256::from(5_000),
                 transfer_fee_basis_points: PodU16::from(1),
             },
         }
@@ -256,45 +259,63 @@ pub(crate) mod test {
 
     #[test]
     fn calculate_fee_max() {
-        let one = u64::try_from(ONE_IN_BASIS_POINTS).unwrap();
+        let one = U256::from(u64::try_from(ONE_IN_BASIS_POINTS).unwrap());
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(5_000),
+            maximum_fee: PodU256::from(5_000),
             transfer_fee_basis_points: PodU16::from(1),
         };
         let maximum_fee = u64::from(transfer_fee.maximum_fee);
         // hit maximum fee
-        assert_eq!(maximum_fee, transfer_fee.calculate_fee(u64::MAX).unwrap());
+        assert_eq!(
+            maximum_fee,
+            transfer_fee
+                .calculate_fee(U256::from(u64::MAX))
+                .unwrap()
+                .as_u64()
+        );
         // at exactly the max
         assert_eq!(
             maximum_fee,
-            transfer_fee.calculate_fee(maximum_fee * one).unwrap()
+            transfer_fee
+                .calculate_fee(U256::from(maximum_fee) * one)
+                .unwrap()
+                .as_u64()
         );
         // one token above, normally rounds up, but we're at the max
         assert_eq!(
             maximum_fee,
-            transfer_fee.calculate_fee(maximum_fee * one + 1).unwrap()
+            transfer_fee
+                .calculate_fee(U256::from(maximum_fee) * one + 1)
+                .unwrap()
+                .as_u64()
         );
         // one token below, rounds up to the max
         assert_eq!(
             maximum_fee,
-            transfer_fee.calculate_fee(maximum_fee * one - 1).unwrap()
+            transfer_fee
+                .calculate_fee(U256::from(maximum_fee) * one - 1)
+                .unwrap()
+                .as_u64()
         );
     }
 
     #[test]
     fn calculate_fee_min() {
-        let one = u64::try_from(ONE_IN_BASIS_POINTS).unwrap();
+        let one = U256::from(u64::try_from(ONE_IN_BASIS_POINTS).unwrap() as u128);
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(5_000),
+            maximum_fee: PodU256::from(5_000),
             transfer_fee_basis_points: PodU16::from(1),
         };
         let minimum_fee = 1;
         // hit minimum fee even with 1 token
-        assert_eq!(minimum_fee, transfer_fee.calculate_fee(1).unwrap());
+        assert_eq!(minimum_fee, transfer_fee.calculate_fee(U256::ONE).unwrap());
         // still minimum at 2 tokens
-        assert_eq!(minimum_fee, transfer_fee.calculate_fee(2).unwrap());
+        assert_eq!(
+            minimum_fee,
+            transfer_fee.calculate_fee(U256::from(2u128)).unwrap()
+        );
         // still minimum at 10_000 tokens
         assert_eq!(minimum_fee, transfer_fee.calculate_fee(one).unwrap());
         // 2 token fee at 10_001
@@ -303,41 +324,51 @@ pub(crate) mod test {
             transfer_fee.calculate_fee(one + 1).unwrap()
         );
         // zero is always zero
-        assert_eq!(0, transfer_fee.calculate_fee(0).unwrap());
+        assert_eq!(0, transfer_fee.calculate_fee(U256::ZERO).unwrap());
     }
 
     #[test]
     fn calculate_fee_zero() {
-        let one = u64::try_from(ONE_IN_BASIS_POINTS).unwrap();
+        let one = U256::from(u64::try_from(ONE_IN_BASIS_POINTS).unwrap() as u128);
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(u64::MAX),
+            maximum_fee: PodU256::from(u64::MAX),
             transfer_fee_basis_points: PodU16::from(0),
         };
         // always zero fee
-        assert_eq!(0, transfer_fee.calculate_fee(0).unwrap());
-        assert_eq!(0, transfer_fee.calculate_fee(u64::MAX).unwrap());
-        assert_eq!(0, transfer_fee.calculate_fee(1).unwrap());
+        assert_eq!(0, transfer_fee.calculate_fee(U256::ZERO).unwrap());
+        assert_eq!(
+            0,
+            transfer_fee
+                .calculate_fee(U256::from(u64::MAX as u128))
+                .unwrap()
+        );
+        assert_eq!(0, transfer_fee.calculate_fee(U256::ONE).unwrap());
         assert_eq!(0, transfer_fee.calculate_fee(one).unwrap());
 
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(0),
+            maximum_fee: PodU256::from(0),
             transfer_fee_basis_points: PodU16::from(MAX_FEE_BASIS_POINTS),
         };
         // always zero fee
-        assert_eq!(0, transfer_fee.calculate_fee(0).unwrap());
-        assert_eq!(0, transfer_fee.calculate_fee(u64::MAX).unwrap());
-        assert_eq!(0, transfer_fee.calculate_fee(1).unwrap());
+        assert_eq!(0, transfer_fee.calculate_fee(U256::ZERO).unwrap());
+        assert_eq!(
+            0,
+            transfer_fee
+                .calculate_fee(U256::from(u64::MAX as u128))
+                .unwrap()
+        );
+        assert_eq!(0, transfer_fee.calculate_fee(U256::ONE).unwrap());
         assert_eq!(0, transfer_fee.calculate_fee(one).unwrap());
     }
 
     #[test]
     fn calculate_fee_exact_out_max() {
-        let one = u64::try_from(ONE_IN_BASIS_POINTS).unwrap();
+        let one = U256::from(u64::try_from(ONE_IN_BASIS_POINTS).unwrap());
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(5_000),
+            maximum_fee: PodU256::from(5_000),
             transfer_fee_basis_points: PodU16::from(1),
         };
         let maximum_fee = u64::from(transfer_fee.maximum_fee);
@@ -352,21 +383,21 @@ pub(crate) mod test {
         assert_eq!(
             maximum_fee,
             transfer_fee
-                .calculate_inverse_fee(maximum_fee * one - maximum_fee)
+                .calculate_inverse_fee(maximum_fee * one.as_u64() - maximum_fee)
                 .unwrap()
         );
         // one token above, normally rounds up, but we're at the max
         assert_eq!(
             maximum_fee,
             transfer_fee
-                .calculate_inverse_fee(maximum_fee * one - maximum_fee + 1)
+                .calculate_inverse_fee(maximum_fee * one.as_u64() - maximum_fee + 1)
                 .unwrap()
         );
         // one token below, rounds up to the max
         assert_eq!(
             maximum_fee,
             transfer_fee
-                .calculate_inverse_fee(maximum_fee * one - maximum_fee - 1)
+                .calculate_inverse_fee(maximum_fee * one.as_u64() - maximum_fee - 1)
                 .unwrap()
         );
     }
@@ -376,26 +407,38 @@ pub(crate) mod test {
         let maximum_fee = 5_000;
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(maximum_fee),
+            maximum_fee: PodU256::from(maximum_fee),
             transfer_fee_basis_points: PodU16::from(u16::try_from(ONE_IN_BASIS_POINTS).unwrap()),
         };
 
         // 0 zero out, 0 in
-        assert_eq!(0, transfer_fee.calculate_pre_fee_amount(0).unwrap());
+        assert_eq!(
+            0,
+            transfer_fee.calculate_pre_fee_amount(U256::ZERO).unwrap()
+        );
 
         // cap at max fee
         assert_eq!(
             1 + maximum_fee,
-            transfer_fee.calculate_pre_fee_amount(1).unwrap()
+            transfer_fee
+                .calculate_pre_fee_amount(U256::ONE)
+                .unwrap()
+                .as_u64()
         );
 
         // no fee same amount
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(maximum_fee),
+            maximum_fee: PodU256::from(maximum_fee),
             transfer_fee_basis_points: PodU16::from(0),
         };
-        assert_eq!(1, transfer_fee.calculate_pre_fee_amount(1).unwrap());
+        assert_eq!(
+            1,
+            transfer_fee
+                .calculate_pre_fee_amount(U256::ONE)
+                .unwrap()
+                .as_u64()
+        );
     }
 
     #[test]
@@ -403,7 +446,7 @@ pub(crate) mod test {
         let one = u64::try_from(ONE_IN_BASIS_POINTS).unwrap();
         let transfer_fee = TransferFee {
             epoch: PodU64::from(0),
-            maximum_fee: PodU64::from(5_000),
+            maximum_fee: PodU256::from(5_000),
             transfer_fee_basis_points: PodU16::from(1),
         };
         let minimum_fee = 1;
@@ -434,16 +477,16 @@ pub(crate) mod test {
         ) {
             let transfer_fee = TransferFee {
                 epoch: PodU64::from(0),
-                maximum_fee: PodU64::from(maximum_fee),
+                maximum_fee: PodU256::from(maximum_fee),
                 transfer_fee_basis_points: PodU16::from(transfer_fee_basis_points),
             };
-            let fee = transfer_fee.calculate_fee(amount_in).unwrap();
-            let amount_out = amount_in.checked_sub(fee).unwrap();
+            let fee = transfer_fee.calculate_fee(U256::from(amount_in as u128)).unwrap();
+            let amount_out = amount_in.checked_sub(fee.as_u64()).unwrap();
             let fee_exact_out = transfer_fee.calculate_inverse_fee(amount_out).unwrap();
-            let diff = if fee > fee_exact_out {
-                fee - fee_exact_out
+            let diff = if fee.as_u64() > fee_exact_out {
+                fee.as_u64() - fee_exact_out
             } else {
-                fee_exact_out - fee
+                fee_exact_out - fee.as_u64()
             };
             // We lose precision with every division by 10000, so for huge amounts,
             // the difference can be in the hundreds. This comes out to less than
@@ -463,13 +506,13 @@ pub(crate) mod test {
         ) {
             let transfer_fee = TransferFee {
                 epoch: PodU64::from(0),
-                maximum_fee: PodU64::from(maximum_fee),
+                maximum_fee: PodU256::from(maximum_fee),
                 transfer_fee_basis_points: PodU16::from(transfer_fee_basis_points),
             };
-            let fee = transfer_fee.calculate_fee(amount_in).unwrap();
-            let amount_out = amount_in.checked_sub(fee).unwrap();
+            let fee = transfer_fee.calculate_fee(U256::from(amount_in )).unwrap();
+            let amount_out = amount_in.checked_sub(fee.as_u64()).unwrap();
             let fee_exact_out = transfer_fee.calculate_inverse_fee(amount_out).unwrap();
-            assert!(fee >= fee_exact_out);
+            assert!(fee.as_u64() >= fee_exact_out);
         }
     }
 }

@@ -1,5 +1,6 @@
 //! Offchain helper for fetching required accounts to build instructions
 
+use ethnum::U256;
 pub use spl_transfer_hook_interface::offchain::{AccountDataResult, AccountFetchError};
 use {
     crate::{
@@ -41,7 +42,7 @@ pub async fn create_transfer_checked_instruction_with_extra_metas<F, Fut>(
     destination_pubkey: &Pubkey,
     authority_pubkey: &Pubkey,
     signer_pubkeys: &[&Pubkey],
-    amount: u64,
+    amount: U256,
     decimals: u8,
     fetch_account_data_fn: F,
 ) -> Result<Instruction, AccountFetchError>
@@ -105,9 +106,9 @@ pub async fn create_transfer_checked_with_fee_instruction_with_extra_metas<F, Fu
     destination_pubkey: &Pubkey,
     authority_pubkey: &Pubkey,
     signer_pubkeys: &[&Pubkey],
-    amount: u64,
+    amount: U256,
     decimals: u8,
-    fee: u64,
+    fee: U256,
     fetch_account_data_fn: F,
 ) -> Result<Instruction, AccountFetchError>
 where
@@ -174,7 +175,7 @@ pub async fn add_extra_account_metas<F, Fut>(
     mint_pubkey: &Pubkey,
     destination_pubkey: &Pubkey,
     authority_pubkey: &Pubkey,
-    amount: u64,
+    amount: U256,
     fetch_account_data_fn: F,
 ) -> Result<(), AccountFetchError>
 where
@@ -294,7 +295,7 @@ mod tests {
         let source = Pubkey::new_unique();
         let destination = Pubkey::new_unique();
         let authority = Pubkey::new_unique();
-        let amount = 100u64;
+        let amount = U256::from(100u64);
 
         let validate_state_pubkey =
             get_extra_account_metas_address(&MINT_PUBKEY, &TRANSFER_HOOK_PROGRAM_ID);
@@ -390,8 +391,8 @@ mod tests {
         let source = Pubkey::new_unique();
         let destination = Pubkey::new_unique();
         let authority = Pubkey::new_unique();
-        let amount = 100u64;
-        let fee = 1u64;
+        let amount = U256::from(100u64);
+        let fee = U256::from(1u64);
 
         let validate_state_pubkey =
             get_extra_account_metas_address(&MINT_PUBKEY, &TRANSFER_HOOK_PROGRAM_ID);

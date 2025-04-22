@@ -1,6 +1,7 @@
 mod program_test;
 use {
     bytemuck::Zeroable,
+    ethnum::U256,
     program_test::{
         ConfidentialTokenAccountBalances, ConfidentialTokenAccountMeta, ConfidentialTransferOption,
         TestContext, TokenContext,
@@ -405,7 +406,7 @@ async fn confidential_transfer_enable_disable_confidential_credits() {
         .mint_to(
             &alice_meta.token_account,
             &mint_authority.pubkey(),
-            10,
+            U256::new(10),
             &[&mint_authority],
         )
         .await
@@ -415,7 +416,7 @@ async fn confidential_transfer_enable_disable_confidential_credits() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            10,
+            U256::new(10),
             decimals,
             &[&alice],
         )
@@ -457,7 +458,7 @@ async fn confidential_transfer_enable_disable_confidential_credits() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            10,
+            U256::new(10),
             decimals,
             &[&alice],
         )
@@ -498,7 +499,7 @@ async fn confidential_transfer_enable_disable_non_confidential_credits() {
         .mint_to(
             &alice_meta.token_account,
             &mint_authority.pubkey(),
-            10,
+            U256::new(10),
             &[&mint_authority],
         )
         .await
@@ -526,7 +527,7 @@ async fn confidential_transfer_enable_disable_non_confidential_credits() {
             &alice_meta.token_account,
             &bob_meta.token_account,
             &alice.pubkey(),
-            10,
+            U256::new(10),
             &[&alice],
         )
         .await
@@ -565,7 +566,7 @@ async fn confidential_transfer_enable_disable_non_confidential_credits() {
             &alice_meta.token_account,
             &bob_meta.token_account,
             &alice.pubkey(),
-            9,
+            U256::new(9),
             &[&alice],
         )
         .await
@@ -778,7 +779,7 @@ async fn confidential_transfer_deposit() {
         .mint_to(
             &alice_meta.token_account,
             &mint_authority.pubkey(),
-            65537,
+            U256::new(65537),
             &[&mint_authority],
         )
         .await
@@ -803,7 +804,7 @@ async fn confidential_transfer_deposit() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            65537,
+            U256::new(65537),
             decimals,
             &[&alice],
         )
@@ -839,7 +840,7 @@ async fn confidential_transfer_deposit() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            0,
+            U256::ZERO,
             decimals,
             &[&alice],
         )
@@ -859,7 +860,7 @@ async fn confidential_transfer_deposit() {
         .unwrap();
 
     // try to deposit over maximum allowed value
-    let illegal_amount = MAXIMUM_DEPOSIT_TRANSFER_AMOUNT.checked_add(1).unwrap();
+    let illegal_amount = U256::from(MAXIMUM_DEPOSIT_TRANSFER_AMOUNT.checked_add(1).unwrap());
 
     token
         .mint_to(
@@ -897,7 +898,7 @@ async fn confidential_transfer_deposit() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            MAXIMUM_DEPOSIT_TRANSFER_AMOUNT,
+            U256::from(MAXIMUM_DEPOSIT_TRANSFER_AMOUNT),
             decimals,
             &[&alice],
         )
@@ -909,7 +910,7 @@ async fn confidential_transfer_deposit() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            0,
+            U256::ZERO,
             decimals,
             &[&alice],
         )
@@ -920,7 +921,7 @@ async fn confidential_transfer_deposit() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            1,
+            U256::ONE,
             decimals,
             &[&alice],
         )
@@ -1194,7 +1195,7 @@ async fn confidential_transfer_withdraw_with_option(option: ConfidentialTransfer
         false,
         false,
         &mint_authority,
-        42,
+        U256::new(42),
         decimals,
     )
     .await;
@@ -1640,7 +1641,7 @@ async fn pause_confidential_deposit() {
         .mint_to(
             &alice_meta.token_account,
             &mint_authority.pubkey(),
-            42,
+            U256::new(42),
             &[mint_authority],
         )
         .await
@@ -1655,7 +1656,7 @@ async fn pause_confidential_deposit() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            42,
+            U256::new(42),
             decimals,
             &[alice],
         )
@@ -1708,7 +1709,7 @@ async fn pause_confidential_withdraw() {
         .mint_to(
             &alice_meta.token_account,
             &mint_authority.pubkey(),
-            42,
+            U256::new(42),
             &[mint_authority],
         )
         .await
@@ -1718,7 +1719,7 @@ async fn pause_confidential_withdraw() {
         .confidential_transfer_deposit(
             &alice_meta.token_account,
             &alice.pubkey(),
-            42,
+            U256::new(42),
             decimals,
             &[&alice],
         )
@@ -1806,7 +1807,7 @@ async fn pause_confidential_transfer() {
         false,
         false,
         &mint_authority,
-        42,
+        U256::new(42),
         decimals,
     )
     .await;
@@ -1880,7 +1881,7 @@ async fn confidential_transfer_transfer_with_option(option: ConfidentialTransfer
         false,
         false,
         &mint_authority,
-        42,
+        U256::new(42),
         decimals,
     )
     .await;
@@ -2577,7 +2578,7 @@ async fn pause_confidential_transfer_with_fee() {
                 transfer_fee_config_authority: Some(transfer_fee_authority.pubkey()),
                 withdraw_withheld_authority: Some(withdraw_withheld_authority.pubkey()),
                 transfer_fee_basis_points: TEST_FEE_BASIS_POINTS,
-                maximum_fee: TEST_MAXIMUM_FEE,
+                maximum_fee: U256::from(TEST_MAXIMUM_FEE),
             },
             ExtensionInitializationParams::ConfidentialTransferMint {
                 authority: Some(confidential_transfer_authority.pubkey()),
@@ -2611,7 +2612,7 @@ async fn pause_confidential_transfer_with_fee() {
         false,
         true,
         &mint_authority,
-        100,
+        U256::new(100),
         decimals,
     )
     .await;
@@ -2675,7 +2676,7 @@ async fn confidential_transfer_transfer_with_fee_with_option(option: Confidentia
                 transfer_fee_config_authority: Some(transfer_fee_authority.pubkey()),
                 withdraw_withheld_authority: Some(withdraw_withheld_authority.pubkey()),
                 transfer_fee_basis_points: TEST_FEE_BASIS_POINTS,
-                maximum_fee: TEST_MAXIMUM_FEE,
+                maximum_fee: U256::from(TEST_MAXIMUM_FEE),
             },
             ExtensionInitializationParams::ConfidentialTransferMint {
                 authority: Some(confidential_transfer_authority.pubkey()),
@@ -2706,7 +2707,7 @@ async fn confidential_transfer_transfer_with_fee_with_option(option: Confidentia
         false,
         true,
         &mint_authority,
-        100,
+        U256::new(100),
         decimals,
     )
     .await;
@@ -2952,7 +2953,7 @@ async fn confidential_transfer_transfer_memo_with_option(option: ConfidentialTra
         false,
         false,
         &mint_authority,
-        42,
+        U256::new(42),
         decimals,
     )
     .await;
@@ -3069,7 +3070,7 @@ async fn confidential_transfer_transfer_with_fee_and_memo_option(
                 transfer_fee_config_authority: Some(transfer_fee_authority.pubkey()),
                 withdraw_withheld_authority: Some(withdraw_withheld_authority.pubkey()),
                 transfer_fee_basis_points: TEST_FEE_BASIS_POINTS,
-                maximum_fee: TEST_MAXIMUM_FEE,
+                maximum_fee: U256::from(TEST_MAXIMUM_FEE),
             },
             ExtensionInitializationParams::ConfidentialTransferMint {
                 authority: Some(confidential_transfer_authority.pubkey()),
@@ -3100,7 +3101,7 @@ async fn confidential_transfer_transfer_with_fee_and_memo_option(
         false,
         true,
         &mint_authority,
-        100,
+        U256::new(100),
         decimals,
     )
     .await;

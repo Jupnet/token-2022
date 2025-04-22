@@ -1,5 +1,6 @@
 #![allow(clippy::arithmetic_side_effects)]
 use {
+    ethnum::U256,
     libtest_mimic::{Arguments, Trial},
     solana_cli_output::OutputFormat,
     solana_client::{nonblocking::rpc_client::RpcClient, rpc_request::TokenAccountsFilter},
@@ -668,7 +669,7 @@ async fn mint(test_validator: &TestValidator, payer: &Keypair) {
         let config = test_config_with_default_signer(test_validator, payer, program_id);
         let token = create_token(&config, payer).await;
         let account = create_associated_account(&config, payer, &token, &payer.pubkey()).await;
-        let mut amount = 0;
+        let mut amount = U256::ZERO;
 
         // mint via implicit owner
         process_test_command(
@@ -1213,7 +1214,7 @@ async fn close_account(test_validator: &TestValidator, payer: &Keypair) {
             if recipient == wsol_recipient {
                 let recipient_account =
                     StateWithExtensionsOwned::<Account>::unpack(recipient_data.data).unwrap();
-                assert_eq!(recipient_account.base.amount, token_rent_amount);
+                assert_eq!(recipient_account.base.amount, U256::from(token_rent_amount));
             }
         }
     }
@@ -2362,7 +2363,7 @@ async fn transfer_fee(test_validator: &TestValidator, payer: &Keypair) {
     let account_state = StateWithExtensionsOwned::<Account>::unpack(account.data).unwrap();
     let extension = account_state.get_extension::<TransferFeeAmount>().unwrap();
     let withheld_amount =
-        spl_token::amount_to_ui_amount(u64::from(extension.withheld_amount), TEST_DECIMALS);
+        spl_token::amount_to_ui_amount(U256::from(extension.withheld_amount), TEST_DECIMALS);
     assert_eq!(withheld_amount, 1.0);
 
     process_test_command(
@@ -2424,7 +2425,7 @@ async fn transfer_fee(test_validator: &TestValidator, payer: &Keypair) {
     let account_state = StateWithExtensionsOwned::<Account>::unpack(account.data).unwrap();
     let extension = account_state.get_extension::<TransferFeeAmount>().unwrap();
     let withheld_amount =
-        spl_token::amount_to_ui_amount(u64::from(extension.withheld_amount), TEST_DECIMALS);
+        spl_token::amount_to_ui_amount(U256::from(extension.withheld_amount), TEST_DECIMALS);
     assert_eq!(withheld_amount, 9.0);
 
     process_test_command(
@@ -2446,7 +2447,7 @@ async fn transfer_fee(test_validator: &TestValidator, payer: &Keypair) {
     let mint_state = StateWithExtensionsOwned::<Mint>::unpack(mint.data).unwrap();
     let extension = mint_state.get_extension::<TransferFeeConfig>().unwrap();
     let withheld_amount =
-        spl_token::amount_to_ui_amount(u64::from(extension.withheld_amount), TEST_DECIMALS);
+        spl_token::amount_to_ui_amount(U256::from(extension.withheld_amount), TEST_DECIMALS);
     assert_eq!(withheld_amount, 9.0);
 
     process_test_command(
@@ -2493,7 +2494,7 @@ async fn transfer_fee(test_validator: &TestValidator, payer: &Keypair) {
     );
     let new_maximum_fee = spl_token::ui_amount_to_amount(new_maximum_fee, TEST_DECIMALS);
     assert_eq!(
-        u64::from(extension.newer_transfer_fee.maximum_fee),
+        U256::from(extension.newer_transfer_fee.maximum_fee),
         new_maximum_fee
     );
 

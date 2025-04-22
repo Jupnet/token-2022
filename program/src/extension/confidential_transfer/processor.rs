@@ -612,6 +612,8 @@ fn process_transfer(
     fee_ciphertext_validity_proof_instruction_offset: Option<i64>,
     range_proof_instruction_offset: i64,
 ) -> ProgramResult {
+    use ethnum::U256;
+
     let account_info_iter = &mut accounts.iter();
     let source_account_info = next_account_info(account_info_iter)?;
     let mint_info = next_account_info(account_info_iter)?;
@@ -801,7 +803,7 @@ fn process_transfer(
         drop(mint_data);
 
         // Since the amount is unknown during a confidential transfer, pass in
-        // u64::MAX as a convention.
+        // u256::MAX as a convention.
         spl_transfer_hook_interface::onchain::invoke_execute(
             &program_id,
             source_account_info.clone(),
@@ -809,7 +811,7 @@ fn process_transfer(
             destination_account_info.clone(),
             authority_info.clone(),
             account_info_iter.as_slice(),
-            u64::MAX,
+            U256::MAX,
         )?;
 
         // unset transferring flag

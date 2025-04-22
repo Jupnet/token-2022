@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{keypair_clone, TestContext, TokenContext},
     solana_program_test::{
         processor,
@@ -212,7 +213,7 @@ async fn test_cpi_guard_transfer() {
                     &bob.pubkey(),
                     &authority,
                     &[],
-                    1,
+                    U256::ONE,
                     9,
                 )
                 .unwrap()
@@ -224,7 +225,7 @@ async fn test_cpi_guard_transfer() {
                     &bob.pubkey(),
                     &authority,
                     &[],
-                    1,
+                    U256::ONE,
                 )
                 .unwrap()
             },
@@ -234,7 +235,7 @@ async fn test_cpi_guard_transfer() {
         .unwrap()
     };
 
-    let mut amount = 100;
+    let mut amount = U256::from(100_u64);
     token
         .mint_to(
             &alice.pubkey(),
@@ -258,7 +259,7 @@ async fn test_cpi_guard_transfer() {
                 &alice.pubkey(),
                 &bob.pubkey(),
                 &alice.pubkey(),
-                1,
+                U256::ONE,
                 &[&alice],
             )
             .await
@@ -284,7 +285,7 @@ async fn test_cpi_guard_transfer() {
                 &alice.pubkey(),
                 &alice.pubkey(),
                 &alice.pubkey(),
-                1,
+                U256::ONE,
                 &[&alice],
             )
             .await
@@ -305,7 +306,7 @@ async fn test_cpi_guard_transfer() {
                 &alice.pubkey(),
                 &bob.pubkey(),
                 &alice.pubkey(),
-                1,
+                U256::ONE,
                 &[&alice],
             )
             .await
@@ -359,7 +360,7 @@ async fn test_cpi_guard_burn() {
                     token.get_address(),
                     &authority,
                     &[],
-                    1,
+                    U256::ONE,
                     9,
                 )
                 .unwrap()
@@ -370,7 +371,7 @@ async fn test_cpi_guard_burn() {
                     token.get_address(),
                     &authority,
                     &[],
-                    1,
+                    U256::ONE,
                 )
                 .unwrap()
             },
@@ -380,7 +381,7 @@ async fn test_cpi_guard_burn() {
         .unwrap()
     };
 
-    let mut amount = 100;
+    let mut amount = U256::from(100_u64);
     token
         .mint_to(
             &alice.pubkey(),
@@ -400,7 +401,7 @@ async fn test_cpi_guard_burn() {
 
         // burn works normally with cpi guard enabled
         token_obj
-            .burn(&alice.pubkey(), &alice.pubkey(), 1, &[&alice])
+            .burn(&alice.pubkey(), &alice.pubkey(), U256::ONE, &[&alice])
             .await
             .unwrap();
         amount -= 1;
@@ -424,7 +425,7 @@ async fn test_cpi_guard_burn() {
                 &alice.pubkey(),
                 &alice.pubkey(),
                 &alice.pubkey(),
-                1,
+                U256::ONE,
                 &[&alice],
             )
             .await
@@ -445,7 +446,7 @@ async fn test_cpi_guard_burn() {
                 &alice.pubkey(),
                 &bob.pubkey(),
                 &alice.pubkey(),
-                1,
+                U256::ONE,
                 &[&alice],
             )
             .await
@@ -499,7 +500,7 @@ async fn test_cpi_guard_approve() {
                     &bob.pubkey(),
                     &alice.pubkey(),
                     &[],
-                    1,
+                    U256::ONE,
                     9,
                 )
                 .unwrap()
@@ -510,7 +511,7 @@ async fn test_cpi_guard_approve() {
                     &bob.pubkey(),
                     &alice.pubkey(),
                     &[],
-                    1,
+                    U256::ONE,
                 )
                 .unwrap()
             },
@@ -533,7 +534,7 @@ async fn test_cpi_guard_approve() {
                 &alice.pubkey(),
                 &bob.pubkey(),
                 &alice.pubkey(),
-                1,
+                U256::ONE,
                 &[&alice],
             )
             .await

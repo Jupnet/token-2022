@@ -1,3 +1,4 @@
+use ethnum::U256;
 pub use solana_zk_sdk::zk_elgamal_proof_program::{
     instruction::ProofInstruction, proof_data::*, state::ProofContextState,
 };
@@ -977,7 +978,7 @@ pub fn deposit(
     token_program_id: &Pubkey,
     token_account: &Pubkey,
     mint: &Pubkey,
-    amount: u64,
+    amount: U256,
     decimals: u8,
     authority: &Pubkey,
     multisig_signers: &[&Pubkey],

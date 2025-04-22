@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use {
+    ethnum::U256,
     solana_program_test::{processor, tokio::sync::Mutex, ProgramTest, ProgramTestContext},
     solana_sdk::{
         pubkey::Pubkey,
@@ -266,7 +267,7 @@ impl ConfidentialTokenAccountMeta {
         require_memo: bool,
         require_fee: bool,
         mint_authority: &Keypair,
-        amount: u64,
+        amount: U256,
         decimals: u8,
     ) -> Self
     where

@@ -1,3 +1,4 @@
+use ethnum::{AsU256, U256};
 #[cfg(feature = "serde-traits")]
 use serde::{Deserialize, Serialize};
 use {
@@ -87,12 +88,12 @@ impl InterestBearingConfig {
     /// field. Excess zeroes or unneeded decimal point are trimmed.
     pub fn amount_to_ui_amount(
         &self,
-        amount: u64,
+        amount: U256,
         decimals: u8,
         unix_timestamp: i64,
     ) -> Option<String> {
         let scaled_amount_with_interest =
-            (amount as f64) * self.total_scale(decimals, unix_timestamp)?;
+            amount.as_f64() * self.total_scale(decimals, unix_timestamp)?;
         let ui_amount = format!("{scaled_amount_with_interest:.*}", decimals as usize);
         Some(trim_ui_amount_string(ui_amount, decimals))
     }
@@ -104,7 +105,7 @@ impl InterestBearingConfig {
         ui_amount: &str,
         decimals: u8,
         unix_timestamp: i64,
-    ) -> Result<u64, ProgramError> {
+    ) -> Result<U256, ProgramError> {
         let scaled_amount = ui_amount
             .parse::<f64>()
             .map_err(|_| ProgramError::InvalidArgument)?;
@@ -112,12 +113,12 @@ impl InterestBearingConfig {
             / self
                 .total_scale(decimals, unix_timestamp)
                 .ok_or(ProgramError::InvalidArgument)?;
-        if amount > (u64::MAX as f64) || amount < (u64::MIN as f64) || amount.is_nan() {
+        if amount > (U256::MAX.as_f64()) || amount < (U256::MIN.as_f64()) || amount.is_nan() {
             Err(ProgramError::InvalidArgument)
         } else {
             // this is important, if you round earlier, you'll get wrong "inf"
             // answers
-            Ok(amount.round() as u64)
+            Ok(amount.round().as_u256())
         }
     }
 
@@ -171,7 +172,7 @@ mod tests {
 
     #[test]
     fn specific_amount_to_ui_amount() {
-        const ONE: u64 = 1_000_000_000_000_000_000;
+        const ONE: U256 = U256::new(1_000_000_000_000_000_000_u128);
         // constant 5%
         let config = InterestBearingConfig {
             rate_authority: OptionalNonZeroPubkey::default(),
@@ -198,7 +199,7 @@ mod tests {
 
         // huge amount with 10 decimal places
         let ui_amount = config
-            .amount_to_ui_amount(10_000_000_000, 10, INT_SECONDS_PER_YEAR)
+            .amount_to_ui_amount(U256::from(10_000_000_000_u64), 10, INT_SECONDS_PER_YEAR)
             .unwrap();
         assert_eq!(ui_amount, "1.0512710964");
 
@@ -226,7 +227,7 @@ mod tests {
         };
         // 1 year at -5% and 1 year at 5% gives a total of 1
         let ui_amount = config
-            .amount_to_ui_amount(1, 0, INT_SECONDS_PER_YEAR * 2)
+            .amount_to_ui_amount(U256::from(1_u64), 0, INT_SECONDS_PER_YEAR * 2)
             .unwrap();
         assert_eq!(ui_amount, "1");
 
@@ -239,11 +240,11 @@ mod tests {
             current_rate: PodI16::from(500),
         };
         let ui_amount = config
-            .amount_to_ui_amount(u64::MAX, 0, INT_SECONDS_PER_YEAR * 2)
+            .amount_to_ui_amount(U256::MAX, 0, INT_SECONDS_PER_YEAR * 2)
             .unwrap();
         assert_eq!(ui_amount, "20386805083448098816");
         let ui_amount = config
-            .amount_to_ui_amount(u64::MAX, 0, INT_SECONDS_PER_YEAR * 10_000)
+            .amount_to_ui_amount(U256::MAX, 0, INT_SECONDS_PER_YEAR * 10_000)
             .unwrap();
         // there's an underflow risk, but it works!
         assert_eq!(ui_amount, "258917064265813826192025834755112557504850551118283225815045099303279643822914042296793377611277551888244755303462190670431480816358154467489350925148558569427069926786360814068189956495940285398273555561779717914539956777398245259214848");
@@ -320,21 +321,21 @@ mod tests {
         let amount = config
             .try_ui_amount_into_amount("20386805083448100000", 0, INT_SECONDS_PER_YEAR * 2)
             .unwrap();
-        assert_eq!(amount, u64::MAX);
+        assert_eq!(amount, U256::MAX);
         let amount = config
             .try_ui_amount_into_amount("258917064265813830000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 0, INT_SECONDS_PER_YEAR * 10_000)
             .unwrap();
-        assert_eq!(amount, u64::MAX);
+        assert_eq!(amount, U256::MAX);
         // scientific notation "e"
         let amount = config
             .try_ui_amount_into_amount("2.5891706426581383e236", 0, INT_SECONDS_PER_YEAR * 10_000)
             .unwrap();
-        assert_eq!(amount, u64::MAX);
+        assert_eq!(amount, U256::MAX);
         // scientific notation "E"
         let amount = config
             .try_ui_amount_into_amount("2.5891706426581383E236", 0, INT_SECONDS_PER_YEAR * 10_000)
             .unwrap();
-        assert_eq!(amount, u64::MAX);
+        assert_eq!(amount, U256::MAX);
 
         // overflow u64 fail
         assert_eq!(
@@ -359,9 +360,14 @@ mod tests {
             last_update_timestamp: INT_SECONDS_PER_YEAR.into(),
             current_rate: 0.into(),
         };
-        for (amount, expected) in [(23, "0.23"), (110, "1.1"), (4200, "42"), (0, "0")] {
+        for (amount, expected) in [
+            (23_u64, "0.23"),
+            (110_u64, "1.1"),
+            (4200_u64, "42"),
+            (0_u64, "0"),
+        ] {
             let ui_amount = config
-                .amount_to_ui_amount(amount, TEST_DECIMALS, INT_SECONDS_PER_YEAR)
+                .amount_to_ui_amount(U256::from(amount), TEST_DECIMALS, INT_SECONDS_PER_YEAR)
                 .unwrap();
             assert_eq!(ui_amount, expected);
         }
@@ -447,7 +453,7 @@ mod tests {
             current_rate in i16::MIN..i16::MAX,
             pre_update_average_rate in i16::MIN..i16::MAX,
             (initialization_timestamp, last_update_timestamp, current_timestamp) in low_middle_high(),
-            amount in 0..=u64::MAX,
+            amount in 0..=u64::MAX, // TODO: change to U256::MAX
             decimals in 0u8..20u8,
         ) {
             let config = InterestBearingConfig {
@@ -457,7 +463,7 @@ mod tests {
                 last_update_timestamp: last_update_timestamp.into(),
                 current_rate: current_rate.into(),
             };
-            let ui_amount = config.amount_to_ui_amount(amount, decimals, current_timestamp);
+            let ui_amount = config.amount_to_ui_amount(U256::from(amount), decimals, current_timestamp);
             assert!(ui_amount.is_some());
         }
     }

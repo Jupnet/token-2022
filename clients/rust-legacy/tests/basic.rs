@@ -1,4 +1,5 @@
 use {
+    ethnum::U256,
     solana_program_test::{
         tokio::{self, sync::Mutex},
         ProgramTest,
@@ -96,11 +97,11 @@ async fn associated_token_account() {
         state::Account {
             mint: *token.get_address(),
             owner: alice.pubkey(),
-            amount: 0,
+            amount: U256::ZERO,
             delegate: COption::None,
             state: state::AccountState::Initialized,
             is_native: COption::None,
-            delegated_amount: 0,
+            delegated_amount: U256::ZERO,
             close_authority: COption::None,
         }
     );
@@ -119,11 +120,11 @@ async fn get_or_create_associated_token_account() {
         state::Account {
             mint: *token.get_address(),
             owner: alice.pubkey(),
-            amount: 0,
+            amount: U256::ZERO,
             delegate: COption::None,
             state: state::AccountState::Initialized,
             is_native: COption::None,
-            delegated_amount: 0,
+            delegated_amount: U256::ZERO,
             close_authority: COption::None,
         }
     );
@@ -150,7 +151,7 @@ async fn set_authority() {
         .mint_to(
             &alice_vault,
             &mint_authority.pubkey(),
-            1,
+            U256::ONE,
             &[&mint_authority],
         )
         .await
@@ -179,7 +180,7 @@ async fn set_authority() {
         .mint_to(
             &alice_vault,
             &mint_authority.pubkey(),
-            2,
+            U256::new(2),
             &[&mint_authority]
         )
         .await
@@ -223,7 +224,7 @@ async fn mint_to() {
         .expect("failed to create associated token account");
     let alice_vault = token.get_associated_token_address(&alice.pubkey());
 
-    let mint_amount = 10 * u64::pow(10, decimals as u32);
+    let mint_amount = U256::from(10 * u64::pow(10, decimals as u32));
     token
         .mint_to(
             &alice_vault,
@@ -267,7 +268,7 @@ async fn transfer() {
         .expect("failed to create associated token account");
     let bob_vault = token.get_associated_token_address(&bob.pubkey());
 
-    let mint_amount = 10 * u64::pow(10, decimals as u32);
+    let mint_amount = U256::from(10 * u64::pow(10, decimals as u32));
     token
         .mint_to(
             &alice_vault,
@@ -278,7 +279,7 @@ async fn transfer() {
         .await
         .expect("failed to mint token");
 
-    let transfer_amount = mint_amount.overflowing_div(3).0;
+    let transfer_amount = mint_amount.overflowing_div(U256::new(3)).0;
     token
         .transfer(
             &alice_vault,

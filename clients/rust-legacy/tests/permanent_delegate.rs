@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -15,7 +16,7 @@ use {
     std::convert::TryInto,
 };
 
-async fn setup_accounts(token_context: &TokenContext, amount: u64) -> (Pubkey, Pubkey) {
+async fn setup_accounts(token_context: &TokenContext, amount: U256) -> (Pubkey, Pubkey) {
     let alice_account = Keypair::new();
     token_context
         .token
@@ -157,7 +158,7 @@ async fn set_authority() {
     );
 
     // setup accounts
-    let amount = 10;
+    let amount = U256::new(10);
     let (alice_account, bob_account) = setup_accounts(&token_context, amount).await;
 
     // fail transfer
@@ -195,7 +196,7 @@ async fn success_transfer() {
         .await
         .unwrap();
     let token_context = context.token_context.unwrap();
-    let amount = 10;
+    let amount = U256::new(10);
     let (alice_account, bob_account) = setup_accounts(&token_context, amount).await;
 
     token_context
@@ -229,7 +230,7 @@ async fn success_burn() {
         .await
         .unwrap();
     let token_context = context.token_context.unwrap();
-    let amount = 10;
+    let amount = U256::new(10);
     let (alice_account, _) = setup_accounts(&token_context, amount).await;
 
     token_context

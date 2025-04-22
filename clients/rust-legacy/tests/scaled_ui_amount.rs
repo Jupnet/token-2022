@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{keypair_clone, TestContext, TokenContext},
     solana_program_test::{
         processor,
@@ -290,14 +291,14 @@ fn process_instruction(
     let mint_info = next_account_info(account_info_iter)?;
     let token_program = next_account_info(account_info_iter)?;
     // 10 tokens, with 9 decimal places
-    let test_amount = 10_000_000_000;
+    let test_amount = U256::new(10_000_000_000);
     // "10" as an amount should be smaller than test_amount due to interest
     invoke(
         &ui_amount_to_amount(token_program.key, mint_info.key, "50")?,
         &[mint_info.clone(), token_program.clone()],
     )?;
     let (_, return_data) = get_return_data().unwrap();
-    let amount = u64::from_le_bytes(return_data[0..8].try_into().unwrap());
+    let amount = U256::from_le_bytes(return_data[0..32].try_into().unwrap());
     msg!("amount: {}", amount);
     if amount != test_amount {
         return Err(ProgramError::InvalidInstructionData);

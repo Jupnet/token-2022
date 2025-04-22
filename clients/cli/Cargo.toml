@@ -41,6 +41,7 @@ spl-memo = { version = "6.0", features = ["no-entrypoint"] }
 strum = "0.26"
 strum_macros = "0.26"
 tokio = "1.42"
+ethnum = "1.5.1"
 
 [dev-dependencies]
 solana-test-validator = "2.1.0"

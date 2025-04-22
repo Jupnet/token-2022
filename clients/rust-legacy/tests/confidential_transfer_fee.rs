@@ -1,6 +1,7 @@
 mod program_test;
 use {
     bytemuck::Zeroable,
+    ethnum::{AsU256, U256},
     program_test::{ConfidentialTransferOption, TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -40,7 +41,7 @@ use {
     std::convert::TryInto,
 };
 
-const TEST_MAXIMUM_FEE: u64 = 100;
+const TEST_MAXIMUM_FEE: U256 = U256::new(100);
 const TEST_FEE_BASIS_POINTS: u16 = 250;
 
 struct ConfidentialTokenAccountMeta {
@@ -97,7 +98,7 @@ impl ConfidentialTokenAccountMeta {
             .mint_to(
                 &token_account,
                 &mint_authority.pubkey(),
-                amount,
+                amount.as_u256(),
                 &[mint_authority],
             )
             .await
@@ -107,7 +108,7 @@ impl ConfidentialTokenAccountMeta {
             .confidential_transfer_deposit(
                 &token_account,
                 &owner.pubkey(),
-                amount,
+                amount.as_u256(),
                 decimals,
                 &[owner],
             )
@@ -735,7 +736,10 @@ async fn confidential_transfer_withdraw_withheld_tokens_from_mint_with_option(
 
     // calculate and encrypt fee to attach to the `WithdrawWithheldTokensFromMint`
     // instruction data
-    let fee = transfer_fee_parameters.calculate_fee(100).unwrap();
+    let fee = transfer_fee_parameters
+        .calculate_fee(U256::new(100))
+        .unwrap()
+        .as_u64();
     let new_decryptable_available_balance = alice_meta.aes_key.encrypt(fee);
 
     check_withheld_amount_in_mint(&token, &withdraw_withheld_authority_elgamal_keypair, fee).await;
@@ -1014,7 +1018,10 @@ async fn confidential_transfer_withdraw_withheld_tokens_from_accounts_with_optio
         .await
         .unwrap();
 
-    let fee = transfer_fee_parameters.calculate_fee(100).unwrap();
+    let fee = transfer_fee_parameters
+        .calculate_fee(U256::new(100))
+        .unwrap()
+        .as_u64();
     let new_decryptable_available_balance = alice_meta.aes_key.encrypt(fee);
     withdraw_withheld_tokens_from_accounts_with_option(
         &token,
@@ -1203,7 +1210,10 @@ async fn confidential_transfer_harvest_withheld_tokens_to_mint() {
 
     // calculate and encrypt fee to attach to the `WithdrawWithheldTokensFromMint`
     // instruction data
-    let fee = transfer_fee_parameters.calculate_fee(100).unwrap();
+    let fee = transfer_fee_parameters
+        .calculate_fee(U256::new(100))
+        .unwrap()
+        .as_u64();
 
     check_withheld_amount_in_mint(&token, &withdraw_withheld_authority_elgamal_keypair, fee).await;
 }

@@ -1,5 +1,6 @@
 mod program_test;
 use {
+    ethnum::U256,
     program_test::{TestContext, TokenContext},
     solana_program_test::tokio,
     solana_sdk::{
@@ -28,7 +29,7 @@ async fn run_basic(context: TestContext) {
     let alice_account = alice_account.pubkey();
 
     // mint a token
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -41,13 +42,13 @@ async fn run_basic(context: TestContext) {
 
     // unchecked is ok
     token_unchecked
-        .burn(&alice_account, &alice.pubkey(), 1, &[&alice])
+        .burn(&alice_account, &alice.pubkey(), U256::ONE, &[&alice])
         .await
         .unwrap();
 
     // checked is ok
     token
-        .burn(&alice_account, &alice.pubkey(), 1, &[&alice])
+        .burn(&alice_account, &alice.pubkey(), U256::ONE, &[&alice])
         .await
         .unwrap();
 
@@ -68,7 +69,7 @@ async fn run_basic(context: TestContext) {
 
     // wrong signer
     let error = token
-        .burn(&alice_account, &bob.pubkey(), 1, &[&bob])
+        .burn(&alice_account, &bob.pubkey(), U256::ONE, &[&bob])
         .await
         .unwrap_err();
     assert_eq!(
@@ -97,7 +98,7 @@ async fn basic_with_extension() {
             transfer_fee_config_authority: Some(Pubkey::new_unique()),
             withdraw_withheld_authority: Some(Pubkey::new_unique()),
             transfer_fee_basis_points: 100u16,
-            maximum_fee: 1_000u64,
+            maximum_fee: U256::new(1_000),
         }])
         .await
         .unwrap();
@@ -120,7 +121,7 @@ async fn run_self_owned(context: TestContext) {
     let alice_account = alice.pubkey();
 
     // mint a token
-    let amount = 10;
+    let amount = U256::new(10);
     token
         .mint_to(
             &alice_account,
@@ -133,13 +134,13 @@ async fn run_self_owned(context: TestContext) {
 
     // unchecked is ok
     token_unchecked
-        .burn(&alice_account, &alice.pubkey(), 1, &[&alice])
+        .burn(&alice_account, &alice.pubkey(), U256::ONE, &[&alice])
         .await
         .unwrap();
 
     // checked is ok
     token
-        .burn(&alice_account, &alice.pubkey(), 1, &[&alice])
+        .burn(&alice_account, &alice.pubkey(), U256::ONE, &[&alice])
         .await
         .unwrap();
 }
@@ -159,7 +160,7 @@ async fn self_owned_with_extension() {
             transfer_fee_config_authority: Some(Pubkey::new_unique()),
             withdraw_withheld_authority: Some(Pubkey::new_unique()),
             transfer_fee_basis_points: 100u16,
-            maximum_fee: 1_000u64,
+            maximum_fee: U256::new(1_000),
         }])
         .await
         .unwrap();
@@ -186,7 +187,7 @@ async fn run_burn_and_close_system_or_incinerator(context: TestContext, non_owne
         .mint_to(
             &alice_account,
             &mint_authority.pubkey(),
-            1,
+            U256::ONE,
             &[&mint_authority],
         )
         .await
@@ -204,7 +205,7 @@ async fn run_burn_and_close_system_or_incinerator(context: TestContext, non_owne
             &alice_account,
             &non_owner_account,
             &alice.pubkey(),
-            1,
+            U256::ONE,
             &[&alice],
         )
         .await
@@ -233,7 +234,7 @@ async fn run_burn_and_close_system_or_incinerator(context: TestContext, non_owne
 
     // but anyone can burn it
     token
-        .burn(&non_owner_account, &carlos.pubkey(), 1, &[&carlos])
+        .burn(&non_owner_account, &carlos.pubkey(), U256::ONE, &[&carlos])
         .await
         .unwrap();
 

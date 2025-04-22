@@ -54,8 +54,6 @@ tag-message = "Publish {{crate_name}} v{{version}}"
 consolidate-commits = false
 
 [patch.crates-io]
-spl-token = { path = "../token/program" }
-
 # solana-sdk
 solana-account-info =  { path = "../solana-sdk/account-info" }
 solana-clock =  { path = "../solana-sdk/clock" }
@@ -75,6 +73,7 @@ solana-sdk-ids =  { path = "../solana-sdk/sdk-ids" }
 solana-sysvar =  { path = "../solana-sdk/sysvar" }
 solana-feature-set =  { path = "../solana-sdk/feature-set" }
 solana-logger =  { path = "../solana-sdk/logger" }
+spl-pod = { path = "../libraries/pod" }
 
 # solana
 solana-account-decoder =  { path = "../account-decoder" }
@@ -91,3 +90,8 @@ solana-remote-wallet =  { path = "../remote-wallet" }
 solana-banks-interface =  { path = "../banks-interface" }
 solana-rpc-client =  { path = "../rpc-client" }
 solana-rpc-client-api =  { path = "../rpc-client-api" }
+
+spl-transfer-hook-interface = { path = "../transfer-hook/interface" }
+spl-associated-token-account = { path = "../associated-token-account/program" }
+spl-token-2022 = { path = "./program" }
+spl-token = { path = "../token/program" }
