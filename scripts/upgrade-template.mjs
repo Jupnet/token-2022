@@ -4,13 +4,17 @@ import { getCargo } from './utils.mjs';
 
 // Arguments to pass to the `create-solana-program` command.
 const rustClientCargo = getCargo(path.join('clients', 'rust'));
-const jsClientPkg = require(
-  path.join(__dirname, '..', 'clients', 'js', 'package.json')
-);
+const jsClientPkg = require(path.join(
+  __dirname,
+  '..',
+  'clients',
+  'js',
+  'package.json'
+));
 const templateArgs = [
   'token-2022',
   '--address',
-  'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+  'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf',
   '--org',
   'solana-program',
   '--rust-client-crate-name',

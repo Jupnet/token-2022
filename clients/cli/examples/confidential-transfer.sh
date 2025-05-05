@@ -3,7 +3,7 @@
 # Set whichever network you would like to test with
 # solana config set -ul
 
-program_id="TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+program_id="Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf"
 
 echo "Setup keypairs"
 solana-keygen new -o confidential-mint.json --no-bip39-passphrase

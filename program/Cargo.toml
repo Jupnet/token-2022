@@ -36,7 +36,7 @@ spl-token-group-interface = { version = "0.5.0" }
 spl-token-metadata-interface = { version = "0.6.0" }
 spl-transfer-hook-interface = { version = "0.9.0" }
 spl-type-length-value = { version = "0.7.0" }
-spl-pod = { version = "0.5.0" }
+spl-pod = { version = "0.5.1" }
 thiserror = "2.0"
 serde = { version = "1.0.217", optional = true }
 serde_with = { version = "3.12.0", optional = true }
@@ -66,4 +66,4 @@ targets = ["x86_64-unknown-linux-gnu"]
 workspace = true
 
 [package.metadata.solana]
-program-id = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+program-id = "Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf"

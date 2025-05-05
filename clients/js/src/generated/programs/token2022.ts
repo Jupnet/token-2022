@@ -98,7 +98,7 @@ import {
 } from '../instructions';
 
 export const TOKEN_2022_PROGRAM_ADDRESS =
-  'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
+  'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf' as Address<'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf'>;
 
 export enum Token2022Account {
   Mint,
@@ -637,7 +637,7 @@ export function identifyToken2022Instruction(
 }
 
 export type ParsedToken2022Instruction<
-  TProgram extends string = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+  TProgram extends string = 'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf',
 > =
   | ({
       instructionType: Token2022Instruction.InitializeMint;

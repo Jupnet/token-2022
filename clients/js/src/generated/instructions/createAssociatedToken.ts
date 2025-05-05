@@ -52,7 +52,7 @@ export type CreateAssociatedTokenInstruction<
     | IAccountMeta<string> = '11111111111111111111111111111111',
   TAccountTokenProgram extends
     | string
-    | IAccountMeta<string> = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+    | IAccountMeta<string> = 'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf',
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -179,7 +179,7 @@ export async function getCreateAssociatedTokenInstructionAsync<
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
-      'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
+      'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf' as Address<'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf'>;
   }
   if (!accounts.ata.value) {
     accounts.ata.value = await findAssociatedTokenPda({
@@ -288,7 +288,7 @@ export function getCreateAssociatedTokenInstruction<
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
-      'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
+      'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf' as Address<'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf'>;
   }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =

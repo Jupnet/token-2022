@@ -57,7 +57,7 @@ export type RecoverNestedAssociatedTokenInstruction<
   TAccountWalletAddress extends string | IAccountMeta<string> = string,
   TAccountTokenProgram extends
     | string
-    | IAccountMeta<string> = 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb',
+    | IAccountMeta<string> = 'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf',
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -213,7 +213,7 @@ export async function getRecoverNestedAssociatedTokenInstructionAsync<
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
-      'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
+      'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf' as Address<'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf'>;
   }
   if (!accounts.ownerAssociatedAccountAddress.value) {
     accounts.ownerAssociatedAccountAddress.value = await findAssociatedTokenPda(
@@ -360,7 +360,7 @@ export function getRecoverNestedAssociatedTokenInstruction<
   // Resolve default values.
   if (!accounts.tokenProgram.value) {
     accounts.tokenProgram.value =
-      'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb' as Address<'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'>;
+      'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf' as Address<'Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf'>;
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');

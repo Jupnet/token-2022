@@ -5,7 +5,7 @@
   "program": {
     "kind": "programNode",
     "name": "token-2022",
-    "publicKey": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+    "publicKey": "Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf",
     "version": "3.0.2",
     "origin": "shank",
     "docs": [],
@@ -6752,7 +6752,7 @@
             "offset": 0
           }
         ]
-      }, 
+      },
       {
         "kind": "instructionNode",
         "name": "initializeMetadataPointer",
@@ -9798,7 +9798,7 @@
               "docs": ["SPL Token program."],
               "defaultValue": {
                 "kind": "publicKeyValueNode",
-                "publicKey": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                "publicKey": "Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf"
               }
             }
           ],
@@ -9920,7 +9920,7 @@
               "docs": ["SPL Token program."],
               "defaultValue": {
                 "kind": "publicKeyValueNode",
-                "publicKey": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                "publicKey": "Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf"
               }
             }
           ],
@@ -10116,7 +10116,7 @@
               "docs": ["SPL Token program."],
               "defaultValue": {
                 "kind": "publicKeyValueNode",
-                "publicKey": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+                "publicKey": "Tokenis9xgQh7yMRbNBnV6uFq7LANbuZJwebxWBWixf"
               }
             }
           ],
