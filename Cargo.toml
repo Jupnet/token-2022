@@ -289,3 +289,6 @@ clone-spl-associated-token-account-client = { path = "../../agave/associated-tok
 clone-spl-token-group-interface = { path = "../../agave/token-group/interface" }
 clone-spl-discriminator = { path = "../../agave/libraries/discriminator" }
 clone-spl-tlv-account-resolution = { path = "../../agave/libraries/tlv-account-resolution" }
+
+jupnet-alt-bn128-bls = { path = "../solana-sdk/alt-bn128-bls" }
+
